@@ -903,6 +903,193 @@ function initSetup(){
   if(urls.jq&&urls.sp&&tokens.jq&&tokens.sp) document.getElementById('setup-card').style.display='none';
 }
 
+// ── FINANCEIRO ──
+let finLoja='all';
+
+function setFinLoja(loja,btn){
+  finLoja=loja;
+  document.querySelectorAll('#fin-loja-filter .filter-btn').forEach(b=>b.classList.remove('active'));
+  if(btn) btn.classList.add('active');
+  renderFinanceiro();
+}
+
+function getFinVendas(){
+  return finLoja==='all'
+    ?[...dados.jq.vendas,...dados.sp.vendas]
+    :dados[finLoja].vendas||[];
+}
+
+function getFinDespesas(){
+  // Considera pagamentos com status Pago para cálculo de saídas reais
+  const pags=finLoja==='all'
+    ?[...dados.jq.pagamentos,...dados.sp.pagamentos]
+    :dados[finLoja].pagamentos||[];
+  return pags.filter(p=>(p.Status||'').toLowerCase()==='pago');
+}
+
+function renderFinanceiro(){
+  const vendas=getFinVendas();
+  const despesas=getFinDespesas();
+  const receita=vendas.reduce((s,r)=>s+parseFloat(r.Total||0),0);
+  const totalDesp=despesas.reduce((s,r)=>s+parseFloat(r.Valor||0),0);
+  const lucro=receita-totalDesp;
+  const margem=receita>0?(lucro/receita*100):0;
+
+  setEl('fin-receita',fmt(receita));
+  setEl('fin-receita-sub',`${vendas.length} venda${vendas.length!==1?'s':''}`);
+  setEl('fin-despesas',fmt(totalDesp));
+  setEl('fin-despesas-sub',`${despesas.length} conta${despesas.length!==1?'s':''} pagas`);
+  setEl('fin-lucro',fmt(lucro));
+  const lucroEl=document.getElementById('fin-lucro');
+  if(lucroEl) lucroEl.style.color=lucro>=0?'var(--vf)':'var(--red)';
+  setEl('fin-lucro-sub',lucro>=0?'resultado positivo ✓':'⚠ resultado negativo');
+  setEl('fin-margem',margem.toFixed(1)+'%');
+  const mEl=document.getElementById('fin-margem');
+  if(mEl) mEl.style.color=margem>=0?'var(--gold)':'var(--red)';
+
+  renderFluxoCaixa(vendas,despesas);
+  renderDespesasCat(despesas);
+  renderSubcatChart();
+  renderDRE(vendas,despesas);
+}
+
+function renderFluxoCaixa(vendas,despesas){
+  const canvas=document.getElementById('canvas-fluxo');
+  if(!canvas) return;
+  const W=canvas.parentElement.offsetWidth||700,H=200;
+  canvas.width=W;canvas.height=H;
+  const ctx=canvas.getContext('2d');ctx.clearRect(0,0,W,H);
+
+  const diasSet=new Set();
+  vendas.forEach(r=>{const d=parseDate(r.Data);if(d)diasSet.add(fmtDateBR(d));});
+  despesas.forEach(r=>{const d=parseDate(r.Vencimento);if(d)diasSet.add(fmtDateBR(d));});
+  const dias=[...diasSet].sort((a,b)=>parseDate(a)-parseDate(b));
+
+  if(!dias.length){
+    ctx.fillStyle='#aaa';ctx.font='13px Sora';ctx.textAlign='center';
+    ctx.fillText('Sem dados no período',W/2,H/2);return;
+  }
+
+  const entradas=dias.map(d=>vendas.filter(r=>fmtDateBR(parseDate(r.Data))===d).reduce((s,r)=>s+parseFloat(r.Total||0),0));
+  const saidas=dias.map(d=>despesas.filter(r=>fmtDateBR(parseDate(r.Vencimento))===d).reduce((s,r)=>s+parseFloat(r.Valor||0),0));
+  let acum=0;
+  const saldos=dias.map((_,i)=>{acum+=(entradas[i]-saidas[i]);return acum;});
+
+  const maxBar=Math.max(...entradas,...saidas,1)*1.15;
+  const minSaldo=Math.min(...saldos,0),maxSaldo=Math.max(...saldos,0.01)*1.1;
+  const pad={top:20,right:16,bottom:28,left:60};
+  const cW=W-pad.left-pad.right,cH=H-pad.top-pad.bottom;
+  const barW=Math.max(4,Math.min(18,cW/dias.length*.35)),gap=cW/Math.max(dias.length,1);
+
+  ctx.strokeStyle='#f0ede8';ctx.lineWidth=1;
+  for(let i=0;i<=4;i++){
+    const y=pad.top+cH-(i/4)*cH;
+    ctx.beginPath();ctx.moveTo(pad.left,y);ctx.lineTo(pad.left+cW,y);ctx.stroke();
+    ctx.fillStyle='#aaa';ctx.font='9px Sora';ctx.textAlign='right';
+    ctx.fillText('R$'+(maxBar*i/4/1000).toFixed(1)+'k',pad.left-3,y+3);
+  }
+
+  dias.forEach((_,i)=>{
+    const x=dias.length>1?pad.left+i*gap+gap/2:pad.left+cW/2;
+    const eH=(entradas[i]/maxBar)*cH;
+    ctx.fillStyle='rgba(131,171,51,.75)';ctx.fillRect(x-barW-1,pad.top+cH-eH,barW,eH);
+    const sH=(saidas[i]/maxBar)*cH;
+    ctx.fillStyle='rgba(229,57,53,.7)';ctx.fillRect(x+1,pad.top+cH-sH,barW,sH);
+  });
+
+  const sRange=maxSaldo-minSaldo||1;
+  const sY=v=>pad.top+cH-((v-minSaldo)/sRange)*cH;
+  ctx.strokeStyle='#3B5BC9';ctx.lineWidth=2;ctx.lineJoin='round';ctx.beginPath();
+  dias.forEach((_,i)=>{
+    const x=dias.length>1?pad.left+i*gap+gap/2:pad.left+cW/2;
+    i===0?ctx.moveTo(x,sY(saldos[i])):ctx.lineTo(x,sY(saldos[i]));
+  });
+  ctx.stroke();
+  dias.forEach((_,i)=>{
+    const x=dias.length>1?pad.left+i*gap+gap/2:pad.left+cW/2;
+    const y=sY(saldos[i]);
+    ctx.fillStyle='white';ctx.beginPath();ctx.arc(x,y,3,0,Math.PI*2);ctx.fill();
+    ctx.fillStyle=saldos[i]>=0?'#3B5BC9':'#e53935';ctx.beginPath();ctx.arc(x,y,2,0,Math.PI*2);ctx.fill();
+  });
+  dias.forEach((d,i)=>{
+    const x=dias.length>1?pad.left+i*gap+gap/2:pad.left+cW/2;
+    ctx.fillStyle='#aaa';ctx.font='9px Sora';ctx.textAlign='center';
+    if(dias.length<=14||i%Math.ceil(dias.length/10)===0)
+      ctx.fillText(d.split('/').slice(0,2).join('/'),x,H-4);
+  });
+
+  const leg=document.getElementById('fluxo-legend');
+  if(leg) leg.innerHTML=`
+    <div style="display:flex;align-items:center;gap:4px;font-size:11px;color:var(--mid);"><div style="width:10px;height:10px;border-radius:2px;background:rgba(131,171,51,.75)"></div>Entradas</div>
+    <div style="display:flex;align-items:center;gap:4px;font-size:11px;color:var(--mid);"><div style="width:10px;height:10px;border-radius:2px;background:rgba(229,57,53,.7)"></div>Saídas</div>
+    <div style="display:flex;align-items:center;gap:4px;font-size:11px;color:var(--mid);"><div style="width:16px;height:3px;background:#3B5BC9;border-radius:2px;"></div>Saldo</div>`;
+}
+
+function renderDespesasCat(despesas){
+  const byCat={};
+  despesas.forEach(r=>{const c=r.Categoria||'Outros';byCat[c]=(byCat[c]||0)+parseFloat(r.Valor||0);});
+  renderBarChart('chart-desp-cat',Object.entries(byCat).map(([label,val])=>({label,val})).sort((a,b)=>b.val-a.val),'#e53935',true);
+}
+
+function renderSubcatChart(){
+  const cat=document.getElementById('fin-cat-select')?.value||'';
+  const despesas=getFinDespesas();
+  const filtered=cat?despesas.filter(r=>(r.Categoria||'')===cat):despesas;
+  const bySub={};
+  filtered.forEach(r=>{const s=r.Subcategoria||r.Descricao||'—';bySub[s]=(bySub[s]||0)+parseFloat(r.Valor||0);});
+  renderBarChart('chart-desp-subcat',Object.entries(bySub).map(([label,val])=>({label,val})).sort((a,b)=>b.val-a.val),'#C97A1A',true);
+}
+
+function renderDRE(vendas,despesas){
+  const diasSet=new Set();
+  vendas.forEach(r=>{const d=parseDate(r.Data);if(d)diasSet.add(fmtDateBR(d));});
+  despesas.forEach(r=>{const d=parseDate(r.Vencimento);if(d)diasSet.add(fmtDateBR(d));});
+  const dias=[...diasSet].sort((a,b)=>parseDate(a)-parseDate(b));
+  const tbody=document.getElementById('tbody-dre'),tfoot=document.getElementById('tfoot-dre');
+  if(!tbody) return;
+  let totalEnt=0,totalSai=0,acum=0;
+  tbody.innerHTML=dias.map(dia=>{
+    const ent=vendas.filter(r=>fmtDateBR(parseDate(r.Data))===dia).reduce((s,r)=>s+parseFloat(r.Total||0),0);
+    const sai=despesas.filter(r=>fmtDateBR(parseDate(r.Vencimento))===dia).reduce((s,r)=>s+parseFloat(r.Valor||0),0);
+    const res=ent-sai;acum+=res;totalEnt+=ent;totalSai+=sai;
+    return `<tr>
+      <td>${dia}</td>
+      <td style="text-align:right;color:var(--vj);font-weight:500;">${ent>0?fmt(ent):'—'}</td>
+      <td style="text-align:right;color:var(--red);font-weight:500;">${sai>0?fmt(sai):'—'}</td>
+      <td style="text-align:right;font-weight:600;color:${res>=0?'var(--vj)':'var(--red)'};">${fmt(res)}</td>
+      <td style="text-align:right;font-weight:700;color:${acum>=0?'var(--vf)':'var(--red)'};">${fmt(acum)}</td>
+    </tr>`;
+  }).join('');
+  if(!dias.length) tbody.innerHTML='<tr><td colspan="5"><div class="empty-state"><div class="empty-msg">Sem dados no período</div></div></td></tr>';
+  const lt=totalEnt-totalSai;
+  if(tfoot) tfoot.innerHTML=`<tr style="background:var(--cream);font-weight:700;border-top:2px solid var(--border);">
+    <td>TOTAL</td>
+    <td style="text-align:right;color:var(--vj);">${fmt(totalEnt)}</td>
+    <td style="text-align:right;color:var(--red);">${fmt(totalSai)}</td>
+    <td style="text-align:right;color:${lt>=0?'var(--vj)':'var(--red)'};">${fmt(lt)}</td>
+    <td style="text-align:right;color:${lt>=0?'var(--vf)':'var(--red)'};">${fmt(lt)}</td>
+  </tr>`;
+}
+
+function exportarDRE(){
+  const vendas=getFinVendas(),despesas=getFinDespesas();
+  const diasSet=new Set();
+  vendas.forEach(r=>{const d=parseDate(r.Data);if(d)diasSet.add(fmtDateBR(d));});
+  despesas.forEach(r=>{const d=parseDate(r.Vencimento);if(d)diasSet.add(fmtDateBR(d));});
+  const dias=[...diasSet].sort((a,b)=>parseDate(a)-parseDate(b));
+  let acum=0;
+  const rows=dias.map(dia=>{
+    const ent=vendas.filter(r=>fmtDateBR(parseDate(r.Data))===dia).reduce((s,r)=>s+parseFloat(r.Total||0),0);
+    const sai=despesas.filter(r=>fmtDateBR(parseDate(r.Vencimento))===dia).reduce((s,r)=>s+parseFloat(r.Valor||0),0);
+    acum+=ent-sai;
+    return [dia,ent.toFixed(2),sai.toFixed(2),(ent-sai).toFixed(2),acum.toFixed(2)];
+  });
+  const csv=[['Data','Entradas','Saidas','Resultado','Saldo Acumulado'],...rows].map(r=>r.join(',')).join('\n');
+  const blob=new Blob(['\uFEFF'+csv],{type:'text/csv;charset=utf-8;'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');a.href=url;a.download=`mayse-dre-${document.getElementById('date-from').value}.csv`;a.click();URL.revokeObjectURL(url);
+}
+
 // ── HELPERS ──
 function fmtISO(d){return d.toISOString().split('T')[0];}
 function fmtDateBR(val){
@@ -981,6 +1168,7 @@ function renderAll(){
   renderCompras();
   renderPagamentos();
   renderEncomendas();
+  renderFinanceiro();
 }
 
 // ── KPIs ──
