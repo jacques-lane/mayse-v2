@@ -1,0 +1,920 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<meta name="theme-color" content="#12340D">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>Mayse · Vendas v2</title>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --vf:#12340D; --vj:#83AB33; --vj-pale:#f0f6e0;
+  --rosa:#F489A7; --rosa-pale:#fef0f4;
+  --gold:#c9933a; --gold-pale:#fdf6ec;
+  --red:#e53935; --red-pale:#ffebee;
+  --cream:#faf9f7; --branco:#FEFEFE;
+  --grafite:#1A1C19; --mid:#444; --light:#888;
+  --border:#e8e4de; --radius:16px; --radius-sm:10px;
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+body{font-family:'Sora',sans-serif;background:var(--cream);color:var(--grafite);min-height:100vh;max-width:430px;margin:0 auto;overflow-x:hidden;}
+
+.header{background:var(--vf);padding:44px 20px 16px;position:relative;overflow:hidden;}
+.header::before,.header::after{content:'';position:absolute;border-radius:50%;}
+.header::before{right:-20px;top:-20px;width:120px;height:120px;background:var(--rosa);opacity:.08;}
+.header::after{right:20px;top:30px;width:60px;height:60px;background:var(--vj);opacity:.12;}
+.header-label{font-size:10px;font-weight:600;letter-spacing:3px;text-transform:uppercase;color:var(--rosa);margin-bottom:4px;}
+.header-title{font-size:22px;font-weight:300;color:var(--branco);line-height:1.3;letter-spacing:-.3px;}
+.header-title em{font-style:normal;font-weight:600;color:var(--vj);}
+.header-meta{margin-top:10px;display:flex;gap:6px;flex-wrap:wrap;}
+.header-chip{font-size:11px;color:rgba(255,255,255,.5);background:rgba(255,255,255,.07);border-radius:20px;padding:3px 10px;cursor:pointer;border:none;font-family:'Sora',sans-serif;}
+.header-chip.warn{color:var(--rosa);background:rgba(244,137,167,.12);}
+.header-chip.alert{color:#fcd97a;background:rgba(252,217,122,.12);}
+
+.nav{display:flex;background:rgba(18,52,13,.95);border-bottom:1px solid rgba(255,255,255,.06);}
+.nav-btn{flex:1;padding:11px 4px;background:none;border:none;color:rgba(255,255,255,.4);font-family:'Sora',sans-serif;font-size:11px;font-weight:500;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:4px;transition:all .2s;border-bottom:2px solid transparent;}
+.nav-btn.active{color:var(--branco);border-bottom-color:var(--rosa);background:rgba(255,255,255,.04);}
+.nav-badge{background:var(--red);color:white;font-size:9px;font-weight:700;padding:1px 5px;border-radius:10px;min-width:16px;text-align:center;}
+
+.config-banner{background:#fff8e6;border-bottom:1px solid #f0d98a;padding:9px 16px;display:flex;align-items:center;gap:10px;font-size:12px;color:#7a5c00;cursor:pointer;}
+.config-banner.connected{background:var(--vj-pale);border-bottom-color:#c5dfa0;color:var(--vf);}
+.config-banner span{flex:1;}
+
+.page{display:none;padding:16px 16px 40px;}
+.page.active{display:block;}
+.section-title{font-size:16px;font-weight:600;color:var(--vf);margin-bottom:14px;}
+
+.form-group{margin-bottom:12px;}
+.form-label{display:block;font-size:10px;font-weight:600;letter-spacing:1px;text-transform:uppercase;color:var(--light);margin-bottom:5px;}
+.form-input{width:100%;padding:12px 14px;background:var(--branco);border:1.5px solid var(--border);border-radius:var(--radius-sm);font-family:'Sora',sans-serif;font-size:15px;color:var(--grafite);outline:none;transition:border-color .2s;-webkit-appearance:none;}
+.form-input:focus{border-color:var(--vj);box-shadow:0 0 0 3px rgba(131,171,51,.1);}
+.form-input::placeholder{color:var(--light);}
+.form-input.error{border-color:var(--rosa);}
+.form-hint.error-msg{font-size:11px;color:var(--rosa);display:none;}
+.form-hint.error-msg.visible{display:block;}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+
+.divider{height:1px;background:var(--border);margin:16px 0;}
+
+/* PRODUTO CARD */
+.produto-card{background:var(--branco);border:1.5px solid var(--border);border-radius:var(--radius-sm);padding:12px;margin-bottom:8px;transition:border-color .2s;}
+.produto-card.low-stock{border-color:#f0d98a;background:#fffdf5;}
+.produto-card.no-stock{border-color:var(--rosa);background:var(--rosa-pale);opacity:.7;pointer-events:none;}
+.produto-card-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;}
+.produto-card-num{font-size:10px;font-weight:600;color:var(--vj);text-transform:uppercase;letter-spacing:1px;}
+.btn-remove-prod{background:none;border:none;color:var(--light);cursor:pointer;font-size:18px;padding:0;line-height:1;}
+
+/* PRODUTO SELECTOR */
+.prod-select-wrap{position:relative;}
+.prod-select{width:100%;padding:12px 14px;background:var(--branco);border:1.5px solid var(--border);border-radius:var(--radius-sm);font-family:'Sora',sans-serif;font-size:14px;color:var(--grafite);outline:none;-webkit-appearance:none;cursor:pointer;}
+.prod-select:focus{border-color:var(--vj);}
+.stock-badge{display:inline-flex;align-items:center;gap:4px;font-size:10px;font-weight:600;padding:3px 8px;border-radius:20px;margin-top:5px;}
+.stock-badge.ok{background:var(--vj-pale);color:var(--vf);}
+.stock-badge.low{background:var(--gold-pale);color:var(--gold);}
+.stock-badge.zero{background:var(--red-pale);color:var(--red);}
+
+/* TOTAL */
+.total-card{background:var(--vf);border-radius:var(--radius);padding:14px 18px;margin:14px 0;display:flex;align-items:center;justify-content:space-between;position:relative;overflow:hidden;}
+.total-card::after{content:'';position:absolute;right:-10px;bottom:-10px;width:70px;height:70px;background:var(--vj);opacity:.15;border-radius:50%;}
+.total-label{font-size:11px;color:rgba(255,255,255,.55);font-weight:500;}
+.total-value{font-size:26px;font-weight:700;color:var(--branco);}
+.total-value span{font-size:13px;margin-right:3px;color:rgba(255,255,255,.5);font-weight:300;}
+.total-itens{font-size:11px;color:rgba(255,255,255,.35);margin-top:2px;}
+
+/* PAYMENT */
+.pay-chips{display:flex;flex-wrap:wrap;gap:7px;margin-bottom:12px;}
+.pay-chip{display:flex;align-items:center;gap:5px;padding:7px 12px;background:var(--branco);border:1.5px solid var(--border);border-radius:40px;font-family:'Sora',sans-serif;font-size:13px;font-weight:500;color:var(--mid);cursor:pointer;transition:all .15s;}
+.pay-chip.selected{background:var(--vj-pale);border-color:var(--vj);color:var(--vf);}
+.pay-inputs{display:flex;flex-direction:column;gap:8px;margin-bottom:12px;}
+.pay-input-row{display:flex;align-items:center;gap:10px;background:var(--branco);border:1.5px solid var(--border);border-radius:var(--radius-sm);padding:10px 14px;}
+.pay-input-row:focus-within{border-color:var(--vj);}
+.pay-input-row .pay-row-label{font-size:13px;font-weight:500;flex:1;}
+.pay-input-row input{width:100px;text-align:right;border:none;outline:none;background:transparent;font-family:'Sora',sans-serif;font-size:15px;font-weight:600;color:var(--vf);-webkit-appearance:none;}
+
+.balance-bar{border-radius:var(--radius-sm);padding:11px 14px;margin-bottom:12px;display:flex;justify-content:space-between;align-items:center;font-size:13px;}
+.balance-bar.ok{background:var(--vj-pale);color:var(--vf);}
+.balance-bar.over{background:var(--rosa-pale);color:#c0516f;}
+.balance-bar.under{background:#fff8e6;color:#7a5c00;}
+.balance-bar.empty{background:#f4f4f4;color:var(--light);}
+.troco-card{background:#fff8e6;border:1px solid #f0d98a;border-radius:var(--radius-sm);padding:10px 14px;margin-bottom:12px;display:none;justify-content:space-between;align-items:center;}
+.troco-card.visible{display:flex;}
+
+/* ESTOQUE */
+.estoque-search{position:relative;margin-bottom:14px;}
+.estoque-search input{width:100%;padding:11px 14px 11px 36px;background:var(--branco);border:1.5px solid var(--border);border-radius:var(--radius-sm);font-family:'Sora',sans-serif;font-size:14px;color:var(--grafite);outline:none;}
+.estoque-search input:focus{border-color:var(--vj);}
+.estoque-search::before{content:'🔍';position:absolute;left:10px;top:50%;transform:translateY(-50%);font-size:14px;}
+
+.estoque-item{background:var(--branco);border:1px solid var(--border);border-radius:var(--radius-sm);padding:12px 14px;margin-bottom:8px;display:flex;align-items:center;gap:12px;}
+.estoque-item.low{border-color:#f0d98a;background:#fffdf5;}
+.estoque-item.zero{border-color:var(--rosa);background:var(--rosa-pale);}
+.estoque-emoji{font-size:24px;flex-shrink:0;}
+.estoque-info{flex:1;}
+.estoque-nome{font-size:14px;font-weight:600;}
+.estoque-cat{font-size:11px;color:var(--light);}
+.estoque-qtd-wrap{display:flex;align-items:center;gap:8px;}
+.qtd-btn{width:28px;height:28px;border-radius:50%;border:1.5px solid var(--border);background:var(--branco);font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;font-weight:600;color:var(--vf);transition:all .15s;}
+.qtd-btn:active{background:var(--vj-pale);}
+.qtd-num{font-size:16px;font-weight:700;min-width:28px;text-align:center;}
+.qtd-num.low{color:var(--gold);}
+.qtd-num.zero{color:var(--red);}
+.alert-tag{font-size:9px;font-weight:600;padding:2px 6px;border-radius:10px;}
+.alert-tag.low{background:var(--gold-pale);color:var(--gold);}
+.alert-tag.zero{background:var(--red-pale);color:var(--red);}
+
+.alert-banner{background:var(--red-pale);border:1px solid #ffcdd2;border-radius:var(--radius-sm);padding:12px 14px;margin-bottom:14px;display:none;}
+.alert-banner.show{display:block;}
+.alert-banner-title{font-size:12px;font-weight:600;color:var(--red);margin-bottom:6px;}
+.alert-item{font-size:12px;color:var(--red);padding:2px 0;}
+
+.low-banner{background:var(--gold-pale);border:1px solid #f0d98a;border-radius:var(--radius-sm);padding:12px 14px;margin-bottom:14px;display:none;}
+.low-banner.show{display:block;}
+.low-banner-title{font-size:12px;font-weight:600;color:var(--gold);margin-bottom:6px;}
+
+/* BUTTONS */
+.btn{width:100%;padding:15px;border:none;border-radius:var(--radius);font-family:'Sora',sans-serif;font-size:14px;font-weight:600;cursor:pointer;transition:all .2s;display:flex;align-items:center;justify-content:center;gap:8px;}
+.btn-primary{background:var(--vf);color:var(--branco);}
+.btn-primary:active{transform:scale(.98);}
+.btn-primary:disabled{opacity:.5;cursor:not-allowed;}
+.btn-whatsapp{background:#25D366;color:var(--branco);margin-top:10px;}
+.btn-outline{background:transparent;border:1.5px solid var(--border);color:var(--mid);margin-top:8px;}
+.btn-add-prod{background:none;border:1.5px dashed var(--vj);color:var(--vj);border-radius:var(--radius-sm);padding:8px 14px;font-family:'Sora',sans-serif;font-size:13px;font-weight:500;cursor:pointer;display:flex;align-items:center;gap:6px;width:100%;justify-content:center;transition:all .15s;margin-bottom:12px;}
+.btn-add-prod:active{background:var(--vj-pale);}
+.spinner{width:18px;height:18px;border:2px solid rgba(255,255,255,.4);border-top-color:white;border-radius:50%;animation:spin .7s linear infinite;display:none;}
+@keyframes spin{to{transform:rotate(360deg);}}
+
+/* MODAL */
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(18,52,13,.6);z-index:100;align-items:flex-end;justify-content:center;}
+.modal-overlay.open{display:flex;}
+.modal{background:var(--branco);border-radius:24px 24px 0 0;padding:24px 20px 40px;width:100%;max-width:430px;animation:slideUp .3s ease;max-height:90vh;overflow-y:auto;}
+@keyframes slideUp{from{transform:translateY(100%);}to{transform:translateY(0);}}
+.modal-handle{width:36px;height:4px;background:var(--border);border-radius:2px;margin:0 auto 20px;}
+.modal-title{font-size:18px;font-weight:600;color:var(--vf);margin-bottom:16px;}
+.recibo-row{display:flex;justify-content:space-between;padding:9px 0;border-bottom:1px solid var(--border);font-size:14px;}
+.recibo-row:last-of-type{border-bottom:none;}
+.recibo-label{color:var(--light);flex-shrink:0;margin-right:10px;}
+.recibo-total{display:flex;justify-content:space-between;padding:12px 0 0;font-weight:700;font-size:16px;color:var(--vf);}
+.recibo-meta{background:#f5f8f0;border-radius:var(--radius-sm);padding:10px 12px;margin-top:12px;font-size:11px;color:var(--light);line-height:1.8;}
+
+.toast{position:fixed;bottom:28px;left:50%;transform:translateX(-50%) translateY(80px);background:var(--vf);color:var(--branco);padding:11px 20px;border-radius:40px;font-size:13px;font-weight:500;z-index:200;transition:transform .3s ease;white-space:nowrap;}
+.toast.show{transform:translateX(-50%) translateY(0);}
+.toast.error{background:#c0392b;}
+.toast.warn{background:var(--gold);}
+
+/* CONFIG MODAL */
+.config-modal{background:var(--branco);border-radius:24px 24px 0 0;padding:24px 20px 40px;width:100%;max-width:430px;animation:slideUp .3s ease;max-height:90vh;overflow-y:auto;}
+.config-step{background:var(--vj-pale);border-radius:var(--radius-sm);padding:12px 14px;margin-bottom:10px;font-size:13px;color:var(--vf);line-height:1.5;}
+.config-step strong{font-weight:600;display:block;margin-bottom:2px;}
+.config-step code{background:var(--vf);color:var(--vj);padding:2px 6px;border-radius:4px;font-size:11px;word-break:break-all;}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-label">Mayse · Floricultura & Garden</div>
+  <div class="header-title" id="header-title">Nova <em>venda</em></div>
+  <div class="header-meta">
+    <button class="header-chip" id="chip-op" onclick="abrirOperador()">👤 —</button>
+    <button class="header-chip" id="chip-loc">📍 —</button>
+    <button class="header-chip" id="chip-estoque" onclick="showPage('estoque', document.querySelector('[data-page=estoque]'))">📦 Estoque</button>
+    <button class="header-chip" onclick="abrirConfig()">⚙️</button>
+  </div>
+</div>
+
+<nav class="nav">
+  <button class="nav-btn active" onclick="showPage('venda',this)" data-page="venda">🌷 Venda</button>
+  <button class="nav-btn" onclick="showPage('encomenda',this)" data-page="encomenda">📋 Encomenda</button>
+  <button class="nav-btn" onclick="showPage('estoque',this)" data-page="estoque">📦 Estoque <span class="nav-badge" id="badge-alertas" style="display:none">0</span></button>
+  <button class="nav-btn" onclick="showPage('historico',this)" data-page="historico">🕐 Histórico</button>
+</nav>
+
+<div class="config-banner" id="config-banner" onclick="abrirConfig()">
+  <span id="banner-text">⚙️ <strong>Configure</strong> a conexão com o Google Sheets</span><span>→</span>
+</div>
+
+<!-- PAGE: VENDA -->
+<div id="page-venda" class="page active">
+  <div class="form-group">
+    <label class="form-label">Telefone do cliente</label>
+    <input class="form-input" id="telefone" type="tel" placeholder="(11) 99999-9999" oninput="maskPhone(this)" onblur="validarTel('telefone','tel-error')">
+    <div class="form-hint error-msg" id="tel-error">Digite um telefone válido com DDD</div>
+  </div>
+  <div class="form-group">
+    <label class="form-label">Nome do cliente</label>
+    <input class="form-input" id="nome" type="text" placeholder="Ex: Maria Silva" autocomplete="off">
+  </div>
+  <div class="divider"></div>
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+    <span class="section-title" style="margin:0;">Produtos</span>
+    <span id="total-itens-label" style="font-size:12px;color:var(--light);"></span>
+  </div>
+  <div id="lista-produtos"></div>
+  <button class="btn-add-prod" onclick="adicionarProduto()">+ Adicionar produto</button>
+  <div class="total-card">
+    <div>
+      <div class="total-label">Total da venda</div>
+      <div class="total-value" id="total-display"><span>R$</span>0,00</div>
+      <div class="total-itens" id="total-itens-desc"></div>
+    </div>
+    <div style="font-size:30px;opacity:.3;">🌸</div>
+  </div>
+  <div class="divider"></div>
+  <div class="form-label" style="margin-bottom:10px;">Forma de pagamento</div>
+  <div class="pay-chips">
+    <button class="pay-chip" onclick="toggleChip(this,'Dinheiro','💵')">💵 Dinheiro</button>
+    <button class="pay-chip" onclick="toggleChip(this,'Pix','📲')">📲 Pix</button>
+    <button class="pay-chip" onclick="toggleChip(this,'Crédito','💳')">💳 Crédito</button>
+    <button class="pay-chip" onclick="toggleChip(this,'Débito','💳')">💳 Débito</button>
+  </div>
+  <div class="pay-inputs" id="pay-inputs"></div>
+  <div class="balance-bar empty" id="balance-bar">
+    <span>Selecione a forma de pagamento</span><span></span>
+  </div>
+  <div class="troco-card" id="troco-card">
+    <span style="font-size:13px;color:#7a5c00;font-weight:500;">💰 Troco</span>
+    <span style="font-size:20px;font-weight:700;color:#7a5c00;" id="troco-value">R$ 0,00</span>
+  </div>
+  <button class="btn btn-primary" id="btn-finalizar" onclick="finalizarVenda()">
+    <span id="btn-text">Finalizar venda ✓</span>
+    <div class="spinner" id="spinner"></div>
+  </button>
+</div>
+
+<!-- PAGE: ENCOMENDA -->
+<div id="page-encomenda" class="page">
+  <div class="form-group">
+    <label class="form-label">Telefone do cliente</label>
+    <input class="form-input" id="enc-telefone" type="tel" placeholder="(11) 99999-9999" oninput="maskPhone(this)" onblur="validarTel('enc-telefone','enc-tel-error')">
+    <div class="form-hint error-msg" id="enc-tel-error">Digite um telefone válido com DDD</div>
+  </div>
+  <div class="form-group">
+    <label class="form-label">Nome do cliente</label>
+    <input class="form-input" id="enc-nome" type="text" placeholder="Ex: João Pereira" autocomplete="off">
+  </div>
+  <div class="form-group">
+    <label class="form-label">Descrição do pedido</label>
+    <textarea class="form-input" id="enc-descricao" style="resize:vertical;min-height:90px;line-height:1.5;" placeholder="Ex: Buquê de 20 rosas vermelhas, entrega sábado 14h…"></textarea>
+  </div>
+  <button class="btn btn-primary" id="btn-encomenda" onclick="finalizarEncomenda()">
+    <span id="btn-enc-text">Registrar encomenda ✓</span>
+    <div class="spinner" id="spinner-enc"></div>
+  </button>
+</div>
+
+<!-- PAGE: ESTOQUE -->
+<div id="page-estoque" class="page">
+  <div class="alert-banner" id="alert-zero">
+    <div class="alert-banner-title">🔴 Produtos zerados</div>
+    <div id="lista-zero"></div>
+  </div>
+  <div class="low-banner" id="alert-low">
+    <div class="low-banner-title">🟡 Estoque baixo</div>
+    <div id="lista-low"></div>
+  </div>
+  <div class="estoque-search">
+    <input type="text" placeholder="Buscar produto…" oninput="filtrarEstoque(this.value)">
+  </div>
+  <div id="lista-estoque">
+    <div style="text-align:center;padding:40px;color:var(--light);font-size:13px;">Carregando estoque…</div>
+  </div>
+</div>
+
+<!-- PAGE: HISTÓRICO -->
+<div id="page-historico" class="page">
+  <p style="font-size:12px;color:var(--light);margin-bottom:16px;">Vendas dos últimos 3 dias neste dispositivo.</p>
+  <div id="hist-content"></div>
+</div>
+
+<!-- Modal recibo -->
+<div class="modal-overlay" id="modal-recibo" onclick="closeModal(event,'modal-recibo')">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-title">🌷 Recibo da venda</div>
+    <div id="modal-content"></div>
+    <div id="sheets-status" style="margin:10px 0;font-size:12px;text-align:center;"></div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px;">
+      <button class="btn btn-outline" style="margin:0;" onclick="novaVenda()">↩ Nova venda</button>
+      <button class="btn btn-whatsapp" style="margin:0;" id="btn-enviar-wa" onclick="enviarWhatsapp()">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="white"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/></svg>
+        Enviar WhatsApp
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal encomenda -->
+<div class="modal-overlay" id="modal-encomenda" onclick="closeModal(event,'modal-encomenda')">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-title">📋 Encomenda registrada</div>
+    <div id="modal-enc-content"></div>
+    <div id="sheets-status-enc" style="margin:10px 0;font-size:12px;text-align:center;"></div>
+    <button class="btn btn-whatsapp" onclick="enviarWhatsappEncomenda()">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="white"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/></svg>
+      Confirmar por WhatsApp
+    </button>
+    <button class="btn btn-outline" onclick="novaEncomenda()">Nova encomenda</button>
+  </div>
+</div>
+
+<!-- Modal operador -->
+<div class="modal-overlay" id="modal-operador" onclick="closeModal(event,'modal-operador')">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-title">👤 Seu nome</div>
+    <p style="font-size:13px;color:var(--light);margin-bottom:14px;">Salvo neste dispositivo.</p>
+    <div class="form-group"><input class="form-input" id="op-input" type="text" placeholder="Ex: Ana Paula"></div>
+    <button class="btn btn-primary" onclick="salvarOperador()">Salvar</button>
+    <button class="btn btn-outline" style="margin-top:8px;" onclick="document.getElementById('modal-operador').classList.remove('open')">Cancelar</button>
+  </div>
+</div>
+
+<!-- Modal config -->
+<div class="modal-overlay" id="modal-config" onclick="closeModal(event,'modal-config')">
+  <div class="config-modal">
+    <div class="modal-handle"></div>
+    <div class="modal-title">⚙️ Google Sheets</div>
+    <div class="config-step">
+      <strong>Abas necessárias na planilha:</strong>
+      <code>Vendas</code> <code>Encomendas</code> <code>Estoque</code> <code>Compras</code>
+    </div>
+    <div class="config-step">
+      <strong>Apps Script v2 atualizado</strong>
+      Certifique-se de ter colado o novo código do Apps Script v2 e feito nova implantação.
+    </div>
+    <div class="form-group" style="margin-top:12px;">
+      <label class="form-label">URL do Web App</label>
+      <input class="form-input" id="webhook-url" type="url" placeholder="https://script.google.com/macros/s/..." style="font-size:12px;">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Token secreto</label>
+      <input class="form-input" id="token-input" type="password" placeholder="Token configurado no Apps Script" style="font-size:12px;">
+    </div>
+    <button class="btn btn-primary" onclick="salvarConfig()">Salvar e conectar</button>
+    <button class="btn btn-outline" style="margin-top:8px;" onclick="document.getElementById('modal-config').classList.remove('open')">Fechar</button>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ── STATE ──
+let produtos = [];
+let totalVenda = 0;
+let pagamentosSelecionados = {};
+let vendaAtual = null;
+let encomendaAtual = null;
+let webhookUrl = localStorage.getItem('floricultura_webhook') || '';
+let tokenSecreto = localStorage.getItem('floricultura_token') || '';
+let operador   = localStorage.getItem('floricultura_operador') || '';
+let locInfo    = {cidade:'…'};
+let estoque    = [];
+let estoqueFiltered = [];
+
+// ── INIT ──
+updateBanner();
+updateOperadorUI();
+detectarDispositivo();
+obterLocalizacao();
+adicionarProduto();
+if(webhookUrl) carregarEstoque();
+
+// ── DEVICE ──
+function detectarDispositivo(){
+  const ua=navigator.userAgent;
+  const t=/iPad|tablet/i.test(ua)?'Tablet':/Android|iPhone|iPad|iPod/i.test(ua)?'Celular':'Desktop';
+  const os=/Android/i.test(ua)?'Android':/iPhone|iPad/i.test(ua)?'iOS':/Windows/i.test(ua)?'Windows':'macOS';
+  window._device=`${t} (${os})`;
+}
+
+// ── LOCATION ──
+function obterLocalizacao(){
+  if(!navigator.geolocation){locInfo.cidade='GPS indisponível';updateLocUI();return;}
+  navigator.geolocation.getCurrentPosition(async pos=>{
+    try{
+      const r=await fetch(`https://nominatim.openstreetmap.org/reverse?lat=${pos.coords.latitude}&lon=${pos.coords.longitude}&format=json`);
+      const j=await r.json();
+      const city=j.address.city||j.address.town||j.address.village||'Local obtido';
+      const state=j.address.state_code||'';
+      locInfo.cidade=state?`${city}, ${state}`:city;
+    }catch(e){locInfo.cidade=`${pos.coords.latitude.toFixed(3)}, ${pos.coords.longitude.toFixed(3)}`;}
+    updateLocUI();
+  },()=>{locInfo.cidade='Localização negada';updateLocUI();},{timeout:8000});
+}
+function updateLocUI(){document.getElementById('chip-loc').textContent='📍 '+locInfo.cidade;}
+
+// ── OPERADOR ──
+function updateOperadorUI(){
+  const chip=document.getElementById('chip-op');
+  chip.textContent=operador?'👤 '+operador:'👤 Identificar';
+  chip.classList.toggle('warn',!operador);
+}
+function abrirOperador(){document.getElementById('op-input').value=operador;document.getElementById('modal-operador').classList.add('open');}
+function salvarOperador(){
+  const v=document.getElementById('op-input').value.trim();
+  if(!v){showToast('Digite seu nome!',true);return;}
+  operador=v;localStorage.setItem('floricultura_operador',v);
+  updateOperadorUI();document.getElementById('modal-operador').classList.remove('open');showToast('Salvo! ✓');
+}
+
+// ── ESTOQUE ──
+async function carregarEstoque(){
+  if(!webhookUrl||!tokenSecreto) return;
+  try{
+    const r=await fetch(webhookUrl+'?action=read&sheet=Estoque&token='+encodeURIComponent(tokenSecreto));
+    const j=await r.json();
+    estoque=(j.data||[]).filter(p=>p.Nome);
+    estoqueFiltered=[...estoque];
+    renderEstoque();
+    atualizarAlertas();
+    renderSelects();
+  }catch(e){console.log('Erro ao carregar estoque:',e);}
+}
+
+function atualizarAlertas(){
+  const zeros=estoque.filter(p=>parseInt(p.Qtd||0)===0);
+  const lows =estoque.filter(p=>parseInt(p.Qtd||0)>0&&parseInt(p.Qtd||0)<=parseInt(p.Alerta_Minimo||5));
+  const total=zeros.length+lows.length;
+
+  const badge=document.getElementById('badge-alertas');
+  badge.style.display=total>0?'inline':'none';
+  badge.textContent=total;
+
+  const chipEst=document.getElementById('chip-estoque');
+  chipEst.classList.toggle('alert',total>0);
+
+  const bannerZero=document.getElementById('alert-zero');
+  bannerZero.classList.toggle('show',zeros.length>0);
+  document.getElementById('lista-zero').innerHTML=zeros.map(p=>`<div class="alert-item">🔴 ${p.Emoji||'🌷'} ${p.Nome} — zerado</div>`).join('');
+
+  const bannerLow=document.getElementById('alert-low');
+  bannerLow.classList.toggle('show',lows.length>0);
+  document.getElementById('lista-low').innerHTML=lows.map(p=>`<div class="alert-item" style="color:var(--gold);">🟡 ${p.Emoji||'🌷'} ${p.Nome} — restam ${p.Qtd}</div>`).join('');
+}
+
+function renderEstoque(){
+  const el=document.getElementById('lista-estoque');
+  if(!estoqueFiltered.length){
+    el.innerHTML='<div style="text-align:center;padding:40px;color:var(--light);font-size:13px;">Nenhum produto encontrado</div>';
+    return;
+  }
+  el.innerHTML=estoqueFiltered.map(p=>{
+    const qtd=parseInt(p.Qtd||0);
+    const min=parseInt(p.Alerta_Minimo||5);
+    const cls=qtd===0?'zero':qtd<=min?'low':'';
+    const qtdCls=qtd===0?'zero':qtd<=min?'low':'';
+    const tag=qtd===0?'<span class="alert-tag zero">Zerado</span>':qtd<=min?'<span class="alert-tag low">Estoque baixo</span>':'';
+    return `<div class="estoque-item ${cls}">
+      <div class="estoque-emoji">${p.Emoji||'🌷'}</div>
+      <div class="estoque-info">
+        <div class="estoque-nome">${p.Nome}</div>
+        <div class="estoque-cat">${p.Categoria||'—'} · R$ ${fmt(p.Preco_Venda)} ${tag}</div>
+      </div>
+      <div class="estoque-qtd-wrap">
+        <button class="qtd-btn" onclick="ajustarQtd('${p.Nome}',-1)">−</button>
+        <div class="qtd-num ${qtdCls}">${qtd}</div>
+        <button class="qtd-btn" onclick="ajustarQtd('${p.Nome}',+1)">+</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+async function ajustarQtd(nome, delta){
+  const p=estoque.find(x=>x.Nome===nome);
+  if(!p) return;
+  const novaQtd=Math.max(0,parseInt(p.Qtd||0)+delta);
+  p.Qtd=novaQtd;
+  renderEstoque();
+  atualizarAlertas();
+  renderSelects();
+  if(webhookUrl){
+    try{
+      await fetch(webhookUrl,{method:'POST',mode:'no-cors',headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({tipo:'ajuste_estoque',nome,novaQtd})});
+    }catch(e){}
+  }
+  showToast(`${nome}: ${novaQtd} unidades`,false,'info');
+}
+
+function filtrarEstoque(q){
+  estoqueFiltered=q?estoque.filter(p=>p.Nome.toLowerCase().includes(q.toLowerCase())):estoque;
+  renderEstoque();
+}
+
+function renderSelects(){
+  // Atualiza todos os selects de produto nas cards
+  document.querySelectorAll('.prod-select').forEach(sel=>{
+    const val=sel.value;
+    const opts=estoque.map(p=>{
+      const qtd=parseInt(p.Qtd||0);
+      const disabled=qtd===0?'disabled':'';
+      const label=qtd===0?`${p.Emoji||'🌷'} ${p.Nome} — ZERADO`:qtd<=parseInt(p.Alerta_Minimo||5)?`${p.Emoji||'🌷'} ${p.Nome} (⚠️ ${qtd} restantes)  R$ ${fmt(p.Preco_Venda)}`:`${p.Emoji||'🌷'} ${p.Nome}  R$ ${fmt(p.Preco_Venda)}`;
+      return `<option value="${p.Nome}" data-preco="${p.Preco_Venda}" data-qtd="${qtd}" ${disabled} ${p.Nome===val?'selected':''}>${label}</option>`;
+    }).join('');
+    sel.innerHTML='<option value="">— Selecione um produto —</option>'+opts;
+    if(val) atualizarSubtotalCard(sel.closest('.produto-card'));
+  });
+}
+
+// ── NAV ──
+function showPage(name,btn){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById('page-'+name).classList.add('active');
+  if(btn) btn.classList.add('active');
+  const titles={venda:'Nova <em>venda</em>',encomenda:'Nova <em>encomenda</em>',estoque:'<em>Estoque</em>',historico:'<em>Histórico</em>'};
+  document.getElementById('header-title').innerHTML=titles[name]||name;
+  if(name==='historico') renderHistorico();
+  if(name==='estoque') carregarEstoque();
+}
+
+// ── CONFIG ──
+function updateBanner(){
+  const b=document.getElementById('config-banner'),t=document.getElementById('banner-text');
+  if(webhookUrl){b.classList.add('connected');t.innerHTML='✅ <strong>Conectado</strong> ao Google Sheets';}
+  else{b.classList.remove('connected');t.innerHTML='⚙️ <strong>Configure</strong> a conexão com o Google Sheets';}
+}
+function abrirConfig(){
+  if(webhookUrl) document.getElementById('webhook-url').value=webhookUrl;
+  if(tokenSecreto) document.getElementById('token-input').value=tokenSecreto;
+  document.getElementById('modal-config').classList.add('open');
+}
+function salvarConfig(){
+  const url=document.getElementById('webhook-url').value.trim();
+  const tok=document.getElementById('token-input').value.trim();
+  if(!url.startsWith('https://script.google.com')){showToast('URL inválida!',true);return;}
+  if(!tok){showToast('Informe o token secreto!',true);return;}
+  webhookUrl=url;tokenSecreto=tok;
+  localStorage.setItem('floricultura_webhook',url);
+  localStorage.setItem('floricultura_token',tok);
+  updateBanner();document.getElementById('modal-config').classList.remove('open');
+  showToast('Conectado! ✓');carregarEstoque();
+}
+
+// ── FORM ──
+function maskPhone(el){
+  let v=el.value.replace(/\D/g,'').slice(0,11);
+  if(v.length>6) v='('+v.slice(0,2)+') '+v.slice(2,7)+'-'+v.slice(7);
+  else if(v.length>2) v='('+v.slice(0,2)+') '+v.slice(2);
+  el.value=v;
+}
+function isTelValid(val){return val.replace(/\D/g,'').length>=10;}
+function validarTel(inputId,errId){
+  const el=document.getElementById(inputId),err=document.getElementById(errId),val=el.value.trim();
+  if(val&&!isTelValid(val)){el.classList.add('error');err.classList.add('visible');}
+  else{el.classList.remove('error');err.classList.remove('visible');}
+}
+function fmt(n){return parseFloat(n||0).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});}
+
+// ── PRODUTOS ──
+function adicionarProduto(){
+  const id=Date.now();
+  produtos.push({id,nome:'',qtd:1,valorUnit:0});
+  renderProdutos();
+}
+function removerProduto(id){
+  if(produtos.length<=1){showToast('Precisa ter ao menos 1 produto',false,'warn');return;}
+  produtos=produtos.filter(p=>p.id!==id);
+  renderProdutos();calcTotal();
+}
+function renderProdutos(){
+  const lista=document.getElementById('lista-produtos');
+  lista.innerHTML='';
+  produtos.forEach((p,i)=>{
+    const div=document.createElement('div');
+    div.className='produto-card';
+    div.id='card-'+p.id;
+
+    const estoqueOpts=estoque.map(ep=>{
+      const qtd=parseInt(ep.Qtd||0);
+      const disabled=qtd===0?'disabled':'';
+      const label=qtd===0?`${ep.Emoji||'🌷'} ${ep.Nome} — ZERADO`:qtd<=parseInt(ep.Alerta_Minimo||5)?`${ep.Emoji||'🌷'} ${ep.Nome} (⚠️ ${qtd} restantes)  R$ ${fmt(ep.Preco_Venda)}`:`${ep.Emoji||'🌷'} ${ep.Nome}  R$ ${fmt(ep.Preco_Venda)}`;
+      return `<option value="${ep.Nome}" data-preco="${ep.Preco_Venda}" data-qtd="${qtd}" ${disabled} ${ep.Nome===p.nome?'selected':''}>${label}</option>`;
+    }).join('');
+
+    div.innerHTML=`
+      <div class="produto-card-header">
+        <span class="produto-card-num">Produto ${i+1}</span>
+        <button class="btn-remove-prod" onclick="removerProduto(${p.id})">×</button>
+      </div>
+      <div class="form-group" style="margin-bottom:8px;">
+        <select class="prod-select" onchange="selecionarProduto(${p.id},this)">
+          <option value="">— Selecione um produto —</option>
+          ${estoqueOpts}
+        </select>
+        <div id="stock-info-${p.id}" style="margin-top:4px;"></div>
+      </div>
+      <div class="form-row">
+        <div class="form-group" style="margin-bottom:0;">
+          <label class="form-label">Qtd</label>
+          <input class="form-input" type="number" min="1" value="${p.qtd}" oninput="updateProd(${p.id},'qtd',this.value)">
+        </div>
+        <div class="form-group" style="margin-bottom:0;">
+          <label class="form-label">Valor unit. (R$)</label>
+          <input class="form-input" type="number" min="0" step="0.01" value="${p.valorUnit||''}" placeholder="0,00" oninput="updateProd(${p.id},'valorUnit',this.value)" id="val-${p.id}">
+        </div>
+      </div>
+      <div style="text-align:right;font-size:12px;color:var(--light);margin-top:6px;">
+        Subtotal: <strong style="color:var(--vf);" id="sub-${p.id}">R$ ${fmt(p.qtd*(p.valorUnit||0))}</strong>
+      </div>`;
+    lista.appendChild(div);
+  });
+}
+
+function selecionarProduto(id,sel){
+  const p=produtos.find(x=>x.id===id);
+  if(!p) return;
+  p.nome=sel.value;
+  const opt=sel.options[sel.selectedIndex];
+  const preco=parseFloat(opt.getAttribute('data-preco')||0);
+  const qtdEst=parseInt(opt.getAttribute('data-qtd')||0);
+  p.valorUnit=preco;
+  document.getElementById('val-'+id).value=preco.toFixed(2);
+  document.getElementById('sub-'+id).textContent='R$ '+fmt(p.qtd*preco);
+
+  // Stock badge
+  const infoEl=document.getElementById('stock-info-'+id);
+  const min=estoque.find(e=>e.Nome===p.nome);
+  const alMin=parseInt(min?.Alerta_Minimo||5);
+  if(qtdEst===0) infoEl.innerHTML='<span class="stock-badge zero">🔴 Zerado — não disponível</span>';
+  else if(qtdEst<=alMin) infoEl.innerHTML=`<span class="stock-badge low">🟡 Estoque baixo — ${qtdEst} restantes</span>`;
+  else infoEl.innerHTML=`<span class="stock-badge ok">✓ ${qtdEst} disponíveis</span>`;
+
+  calcTotal();
+}
+
+function atualizarSubtotalCard(card){
+  // noop placeholder
+}
+
+function updateProd(id,field,val){
+  const p=produtos.find(x=>x.id===id);
+  if(!p) return;
+  if(field==='qtd') p.qtd=parseInt(val)||1;
+  else if(field==='valorUnit') p.valorUnit=parseFloat(val)||0;
+  else p.nome=val;
+  const subEl=document.getElementById('sub-'+id);
+  if(subEl) subEl.textContent='R$ '+fmt(p.qtd*(p.valorUnit||0));
+  calcTotal();
+}
+
+function calcTotal(){
+  totalVenda=produtos.reduce((s,p)=>s+(p.qtd*(p.valorUnit||0)),0);
+  document.getElementById('total-display').innerHTML='<span>R$</span>'+fmt(totalVenda);
+  const n=produtos.length;
+  document.getElementById('total-itens-desc').textContent=n===1?'1 produto':`${n} produtos`;
+  document.getElementById('total-itens-label').textContent=n===1?'1 item':`${n} itens`;
+  recalcBalance();
+}
+
+// ── PAYMENT ──
+function toggleChip(btn,tipo){
+  btn.classList.toggle('selected');
+  const container=document.getElementById('pay-inputs');
+  if(btn.classList.contains('selected')){
+    pagamentosSelecionados[tipo]=0;
+    const row=document.createElement('div');
+    row.className='pay-input-row';row.id='pay-row-'+tipo;
+    row.innerHTML=`<span class="pay-row-label">${btn.textContent.trim()}</span>
+      <input type="number" min="0" step="0.01" placeholder="0,00" id="pay-val-${tipo}"
+        oninput="updatePayValue('${tipo}',this.value)" onfocus="autoFill('${tipo}')">`;
+    container.appendChild(row);
+  }else{
+    delete pagamentosSelecionados[tipo];
+    const r=document.getElementById('pay-row-'+tipo);if(r)r.remove();
+  }
+  recalcBalance();
+}
+function updatePayValue(tipo,val){pagamentosSelecionados[tipo]=parseFloat(val)||0;recalcBalance();}
+function autoFill(tipo){
+  const pago=Object.entries(pagamentosSelecionados).filter(([k])=>k!==tipo).reduce((s,[,v])=>s+v,0);
+  const rest=totalVenda-pago;
+  if(rest>0){const inp=document.getElementById('pay-val-'+tipo);if(!inp.value||parseFloat(inp.value)===0){inp.value=rest.toFixed(2);pagamentosSelecionados[tipo]=rest;recalcBalance();}}
+}
+function recalcBalance(){
+  const bar=document.getElementById('balance-bar'),tc=document.getElementById('troco-card');
+  const keys=Object.keys(pagamentosSelecionados);
+  if(keys.length===0){bar.className='balance-bar empty';bar.innerHTML='<span>Selecione a forma de pagamento</span><span></span>';tc.classList.remove('visible');return;}
+  const pago=Object.values(pagamentosSelecionados).reduce((s,v)=>s+v,0);
+  const diff=pago-totalVenda;
+  if(Math.abs(diff)<0.01){bar.className='balance-bar ok';bar.innerHTML=`<span style="font-weight:500;">✓ Pagamento completo</span><span style="font-size:17px;font-weight:700;">R$ ${fmt(pago)}</span>`;tc.classList.remove('visible');}
+  else if(diff>0){bar.className='balance-bar over';bar.innerHTML=`<span style="font-weight:500;">Troco a devolver</span><span style="font-size:17px;font-weight:700;">+R$ ${fmt(diff)}</span>`;tc.classList.add('visible');document.getElementById('troco-value').textContent='R$ '+fmt(diff);}
+  else{bar.className='balance-bar under';bar.innerHTML=`<span style="font-weight:500;">⚠ Falta</span><span style="font-size:17px;font-weight:700;">R$ ${fmt(Math.abs(diff))}</span>`;tc.classList.remove('visible');}
+}
+
+// ── META ──
+function getMeta(){return{operador:operador||'Não identificado',cidade:locInfo.cidade,dispositivo:window._device||'Desconhecido'};}
+
+// ── FINALIZAR VENDA ──
+async function finalizarVenda(){
+  const nome=document.getElementById('nome').value.trim();
+  const tel =document.getElementById('telefone').value.trim();
+  if(!tel||!isTelValid(tel)){showToast('Informe um telefone válido!',true);return;}
+  if(!nome){showToast('Informe o nome do cliente!',true);return;}
+  const prodsFilled=produtos.filter(p=>p.nome&&p.valorUnit>0);
+  if(!prodsFilled.length){showToast('Adicione ao menos 1 produto!',true);return;}
+  if(!Object.keys(pagamentosSelecionados).length){showToast('Selecione o pagamento!',true);return;}
+  const pago=Object.values(pagamentosSelecionados).reduce((s,v)=>s+v,0);
+  if(pago<totalVenda-0.01){showToast('Valor pago menor que o total!',true);return;}
+  if(!operador){showToast('Identifique-se primeiro!',true);abrirOperador();return;}
+
+  const troco=Math.max(0,pago-totalVenda);
+  const agora=new Date();
+  const pags={};
+  for(const [k,v] of Object.entries(pagamentosSelecionados))
+    pags[k.normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-zA-Z]/g,'')]=v;
+  const produtosTexto=prodsFilled.map(p=>`${p.nome} (${p.qtd}x R$ ${fmt(p.valorUnit)})`).join(' | ');
+
+  vendaAtual={
+    tipo:'venda',nome,telefone:tel,
+    produtos:prodsFilled,produtosTexto,
+    total:totalVenda,pagamentos:pags,troco,
+    pagamentoTexto:Object.entries(pagamentosSelecionados).map(([k,v])=>`${k}: R$ ${fmt(v)}`).join(' · '),
+    data:agora.toLocaleDateString('pt-BR'),
+    hora:agora.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'}),
+    ts:agora.getTime(),
+    ...getMeta()
+  };
+
+  setLoading('btn-finalizar','btn-text','spinner',true,'Salvando…');
+  const salvo=webhookUrl?await enviarParaSheets(vendaAtual):false;
+  setLoading('btn-finalizar','btn-text','spinner',false,'Finalizar venda ✓');
+
+  // Atualiza estoque local
+  prodsFilled.forEach(p=>{
+    const ep=estoque.find(e=>e.Nome===p.nome);
+    if(ep) ep.Qtd=Math.max(0,(parseInt(ep.Qtd||0)-p.qtd));
+  });
+  atualizarAlertas();
+  renderSelects();
+
+  salvarLocal(vendaAtual);
+  abrirModalRecibo(vendaAtual,salvo);
+}
+
+function salvarLocal(v){
+  const hist=JSON.parse(localStorage.getItem('flor_hist')||'[]');
+  hist.unshift(v);
+  const limite=Date.now()-3*24*60*60*1000;
+  localStorage.setItem('flor_hist',JSON.stringify(hist.filter(h=>h.ts>limite)));
+}
+
+function abrirModalRecibo(v,salvo){
+  const trocoRow=v.troco>0.01?`<div class="recibo-row"><span class="recibo-label">💰 Troco</span><span style="color:#7a5c00;font-weight:600;">R$ ${fmt(v.troco)}</span></div>`:'';
+  const prodsRows=v.produtos.map(p=>`<div class="recibo-row"><span class="recibo-label">${p.nome}</span><span>${p.qtd}x R$ ${fmt(p.valorUnit)} = <strong>R$ ${fmt(p.qtd*p.valorUnit)}</strong></span></div>`).join('');
+  document.getElementById('modal-content').innerHTML=`
+    <div class="recibo-row"><span class="recibo-label">Telefone</span><span>${v.telefone}</span></div>
+    <div class="recibo-row"><span class="recibo-label">Cliente</span><span>${v.nome}</span></div>
+    ${prodsRows}
+    <div class="recibo-row"><span class="recibo-label">Pagamento</span><span style="text-align:right;max-width:180px;">${v.pagamentoTexto}</span></div>
+    ${trocoRow}
+    <div class="recibo-row"><span class="recibo-label">Data / Hora</span><span>${v.data} às ${v.hora}</span></div>
+    <div class="recibo-total"><span>Total</span><span>R$ ${fmt(v.total)}</span></div>
+    <div class="recibo-meta"><strong>Operador:</strong> ${v.operador} · <strong>Local:</strong> ${v.cidade}</div>`;
+  setSheetsStatus('sheets-status',salvo);
+  document.getElementById('modal-recibo').classList.add('open');
+}
+
+function enviarWhatsapp(){
+  if(!vendaAtual) return;
+  const v=vendaAtual,tel=v.telefone.replace(/\D/g,'');
+  const prodsLinha=v.produtos.map(p=>`  • ${p.nome}: ${p.qtd}x R$ ${fmt(p.valorUnit)}`).join('\n');
+  const trocoLinha=v.troco>0.01?`💰 *Troco:* R$ ${fmt(v.troco)}\n`:'';
+  const txt=`🌸 *Recibo de Compra*\n\n👤 *Cliente:* ${v.nome}\n\n*Produtos:*\n${prodsLinha}\n\n💰 *Total:* R$ ${fmt(v.total)}\n💳 *Pagamento:* ${v.pagamentoTexto}\n${trocoLinha}📅 ${v.data} às ${v.hora}\n\n_Obrigado pela preferência! 🌸_`;
+  window.open(`https://wa.me/${tel}?text=${encodeURIComponent(txt)}`,'_blank');
+  // Rastreia silenciosamente com ambos os horários
+  const hora=new Date().toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit',second:'2-digit'});
+  if(webhookUrl) registrarWaStatus({waCliqueHora:hora,waConfirmadoHora:hora});
+  novaVenda();
+}
+
+function novaVenda(){
+  document.getElementById('modal-recibo').classList.remove('open');
+  document.getElementById('nome').value='';
+  document.getElementById('telefone').value='';
+  document.getElementById('tel-error').classList.remove('visible');
+  document.getElementById('telefone').classList.remove('error');
+  produtos=[];adicionarProduto();
+  totalVenda=0;document.getElementById('total-display').innerHTML='<span>R$</span>0,00';
+  document.querySelectorAll('.pay-chip').forEach(b=>b.classList.remove('selected'));
+  document.getElementById('pay-inputs').innerHTML='';
+  pagamentosSelecionados={};recalcBalance();
+  document.getElementById('btn-wa-confirm') && (document.getElementById('btn-wa-confirm').style.display='none');
+  document.getElementById('btn-enviar-wa') && (document.getElementById('btn-enviar-wa').style.opacity='1');
+  vendaAtual=null;
+  document.getElementById('telefone').focus();
+}
+
+// ── ENCOMENDA ──
+async function finalizarEncomenda(){
+  const nome=document.getElementById('enc-nome').value.trim();
+  const tel =document.getElementById('enc-telefone').value.trim();
+  const desc=document.getElementById('enc-descricao').value.trim();
+  if(!tel||!isTelValid(tel)){showToast('Informe um telefone válido!',true);return;}
+  if(!nome||!desc){showToast('Preencha nome e descrição!',true);return;}
+  if(!operador){showToast('Identifique-se primeiro!',true);abrirOperador();return;}
+  const agora=new Date();
+  encomendaAtual={tipo:'encomenda',nome,telefone:tel,descricao:desc,status:'Pendente',
+    data:agora.toLocaleDateString('pt-BR'),
+    hora:agora.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'}),
+    ...getMeta()};
+  setLoading('btn-encomenda','btn-enc-text','spinner-enc',true,'Salvando…');
+  const salvo=webhookUrl?await enviarParaSheets(encomendaAtual):false;
+  setLoading('btn-encomenda','btn-enc-text','spinner-enc',false,'Registrar encomenda ✓');
+  document.getElementById('modal-enc-content').innerHTML=`
+    <div class="recibo-row"><span class="recibo-label">Telefone</span><span>${encomendaAtual.telefone}</span></div>
+    <div class="recibo-row"><span class="recibo-label">Cliente</span><span>${encomendaAtual.nome}</span></div>
+    <div class="recibo-row"><span class="recibo-label">Data / Hora</span><span>${encomendaAtual.data} às ${encomendaAtual.hora}</span></div>
+    <div class="recibo-row" style="flex-direction:column;gap:4px;"><span class="recibo-label">Pedido</span><span style="font-size:14px;line-height:1.5;">${encomendaAtual.descricao}</span></div>
+    <div class="recibo-meta"><strong>Status:</strong> Pendente · <strong>Operador:</strong> ${encomendaAtual.operador}</div>`;
+  setSheetsStatus('sheets-status-enc',salvo);
+  document.getElementById('modal-encomenda').classList.add('open');
+}
+
+function enviarWhatsappEncomenda(){
+  if(!encomendaAtual) return;
+  const v=encomendaAtual,tel=v.telefone.replace(/\D/g,'');
+  const txt=`🌸 *Confirmação de Encomenda*\n\n👤 *Cliente:* ${v.nome}\n📋 *Pedido:* ${v.descricao}\n📅 ${v.data} às ${v.hora}\n\n_Em breve entraremos em contato! 🌸_`;
+  window.open(`https://wa.me/${tel}?text=${encodeURIComponent(txt)}`,'_blank');
+}
+
+function novaEncomenda(){
+  document.getElementById('modal-encomenda').classList.remove('open');
+  ['enc-nome','enc-telefone','enc-descricao'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('enc-tel-error').classList.remove('visible');
+  document.getElementById('enc-telefone').classList.remove('error');
+  encomendaAtual=null;
+}
+
+// ── HISTÓRICO ──
+function renderHistorico(){
+  const hist=JSON.parse(localStorage.getItem('flor_hist')||'[]');
+  const container=document.getElementById('hist-content');
+  if(!hist.length){container.innerHTML='<div style="text-align:center;padding:50px 20px;color:var(--light);"><div style="font-size:40px;margin-bottom:10px;">🌼</div><div style="font-size:13px;">Nenhuma venda nos últimos 3 dias.</div></div>';return;}
+  const grupos={};
+  hist.forEach(v=>{if(!grupos[v.data])grupos[v.data]=[];grupos[v.data].push(v);});
+  container.innerHTML='';
+  for(const [data,vendas] of Object.entries(grupos)){
+    const div=document.createElement('div');div.style.marginBottom='20px';
+    const hoje=new Date().toLocaleDateString('pt-BR');
+    const ontem=new Date(Date.now()-86400000).toLocaleDateString('pt-BR');
+    const label=data===hoje?'Hoje':data===ontem?'Ontem':data;
+    div.innerHTML=`<div style="font-size:10px;font-weight:600;letter-spacing:1px;text-transform:uppercase;color:var(--light);margin-bottom:8px;padding-bottom:6px;border-bottom:1px solid var(--border);">${label} · ${vendas.length} venda${vendas.length>1?'s':''}</div>`;
+    vendas.forEach(v=>{
+      const prods=v.produtos?v.produtos.map(p=>p.nome).join(', '):v.produto||'—';
+      const item=document.createElement('div');
+      item.style.cssText='background:var(--branco);border:1px solid var(--border);border-radius:var(--radius-sm);padding:12px;margin-bottom:7px;';
+      item.innerHTML=`
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:4px;">
+          <span style="font-size:14px;font-weight:600;">${v.nome}</span>
+          <span style="font-size:11px;color:var(--light);">${v.hora}</span>
+        </div>
+        <div style="font-size:12px;color:var(--mid);margin-bottom:6px;">${prods}</div>
+        <div style="display:flex;justify-content:space-between;align-items:center;">
+          <span style="font-size:17px;font-weight:700;color:var(--vf);">R$ ${fmt(v.total)}</span>
+          <span style="font-size:10px;background:var(--vj-pale);color:var(--vf);padding:2px 7px;border-radius:20px;font-weight:500;">${v.pagamentoTexto||'—'}</span>
+        </div>
+        <div style="font-size:11px;color:var(--light);margin-top:4px;">👤 ${v.operador||'—'}</div>`;
+      div.appendChild(item);
+    });
+    container.appendChild(div);
+  }
+}
+
+// ── SHARED ──
+async function enviarParaSheets(dados){
+  try{
+    await fetch(webhookUrl,{method:'POST',mode:'no-cors',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({...dados,token:tokenSecreto})});
+    return true;
+  }catch(e){return false;}
+}
+async function registrarWaStatus(dados){
+  try{await fetch(webhookUrl,{method:'POST',mode:'no-cors',headers:{'Content-Type':'application/json'},body:JSON.stringify({tipo:'wa_update',...dados})});}
+  catch(e){}
+}
+function setSheetsStatus(id,salvo){
+  const el=document.getElementById(id);
+  if(!webhookUrl){el.textContent='⚠️ Não salvo — configure o Google Sheets';el.style.color='#c9933a';}
+  else if(salvo){el.textContent='✅ Salvo no Google Sheets';el.style.color='var(--vj)';}
+  else{el.textContent='❌ Erro ao salvar';el.style.color='#c0392b';}
+}
+function setLoading(btnId,txtId,spinnerId,loading,label){
+  document.getElementById(btnId).disabled=loading;
+  document.getElementById(txtId).textContent=label;
+  document.getElementById(spinnerId).style.display=loading?'block':'none';
+}
+function closeModal(e,id){if(e.target===document.getElementById(id))document.getElementById(id).classList.remove('open');}
+function showToast(msg,error=false,type=''){
+  const t=document.getElementById('toast');
+  t.textContent=msg;
+  t.className='toast';
+  if(error) t.classList.add('error');
+  else if(type==='warn') t.classList.add('warn');
+  t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'),2800);
+}
+</script>
+</body>
+</html>
