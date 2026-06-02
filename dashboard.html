@@ -887,12 +887,9 @@ if(sessionStorage.getItem('mayse_auth')==='1'){
 }
 
 function initApp(){
-
-// ── INIT ──
-const today=new Date(), d7=new Date(today); d7.setDate(d7.getDate()-7);
-document.getElementById('date-from').value=fmtISO(d7);
-document.getElementById('date-to').value=fmtISO(today);
-initSetup();
+  // App já inicializado globalmente, só garante que o painel está visível
+  document.getElementById('login-screen').style.display='none';
+}
 
 function initSetup(){
   if(urls.jq){document.getElementById('url-jq').value=urls.jq;}
@@ -1621,7 +1618,6 @@ document.querySelectorAll('.fmodal-overlay').forEach(el=>{
 function toggleSidebar(){document.getElementById('sidebar').classList.toggle('open');document.getElementById('sidebar-overlay').classList.toggle('show');}
 function closeSidebar(){document.getElementById('sidebar').classList.remove('open');document.getElementById('sidebar-overlay').classList.remove('show');}
 
-// ── HELPERS ──
 function setLoading(on,msg){
   document.getElementById('loading-overlay').classList.toggle('show',on);
   if(msg) document.getElementById('loading-text').textContent=msg;
@@ -1632,7 +1628,14 @@ function setLoading(on,msg){
 function showError(msg){const el=document.getElementById('error-banner');el.textContent=msg;el.classList.add('show');}
 function hideError(){document.getElementById('error-banner').classList.remove('show');}
 
-} // fim initApp()
+// Inicializa datas ao carregar
+(function(){
+  const today=new Date(), d7=new Date(today); d7.setDate(d7.getDate()-7);
+  const fi=document.getElementById('date-from'), ti=document.getElementById('date-to');
+  if(fi) fi.value=new Date(d7).toISOString().split('T')[0];
+  if(ti) ti.value=new Date(today).toISOString().split('T')[0];
+  initSetup();
+})();
 </script>
 </body>
 </html>
