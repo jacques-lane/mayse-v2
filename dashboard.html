@@ -834,8 +834,36 @@ body{font-family:'Sora',sans-serif;background:var(--cream);color:var(--grafite);
 
 <script>
 // ── SEGURANÇA ──
-// Defina aqui a senha do dashboard (diferente do token do Apps Script)
 const SENHA_DASHBOARD = 'mayse2026';
+
+// ── STATE (global, disponível antes do login) ──
+let urls = {
+  jq: localStorage.getItem('mayse_url_jq')||'',
+  sp: localStorage.getItem('mayse_url_sp')||''
+};
+let tokens = {
+  jq: localStorage.getItem('mayse_token_jq')||'',
+  sp: localStorage.getItem('mayse_token_sp')||''
+};
+let dados = { jq:{vendas:[],encomendas:[],estoque:[],compras:[],pagamentos:[]}, sp:{vendas:[],encomendas:[],estoque:[],compras:[],pagamentos:[]} };
+let lojaAtiva = 'all';
+let filtroEncAtual='todos', filtroPagAtual='todos', filtroEstAtual='todos', filtroComprasAtual='todos', filtroProdAtual='todos';
+
+// ── SAVE URL (global, chamado pelos botões do setup) ──
+function saveUrl(loja){
+  const url=document.getElementById('url-'+loja).value.trim();
+  const tok=document.getElementById('token-'+loja).value.trim();
+  if(!url.startsWith('https://script.google.com')){alert('URL inválida');return;}
+  if(!tok){alert('Informe o token secreto');return;}
+  urls[loja]=url; tokens[loja]=tok;
+  localStorage.setItem('mayse_url_'+loja,url);
+  localStorage.setItem('mayse_token_'+loja,tok);
+  const labels={jq:'Juquiá',sp:'São Paulo'};
+  const cls={jq:'cb-jq',sp:'cb-sp'};
+  document.getElementById('status-'+loja).innerHTML=`<span class="connected-badge ${cls[loja]}">✓ ${labels[loja]} conectada</span>`;
+  if(urls.jq&&urls.sp&&tokens.jq&&tokens.sp) document.getElementById('setup-card').style.display='none';
+  alert(`✓ ${labels[loja]} salva! Clique em Carregar para ver os dados.`);
+}
 
 function doLogin(){
   const senha=document.getElementById('login-senha').value;
@@ -859,19 +887,6 @@ if(sessionStorage.getItem('mayse_auth')==='1'){
 }
 
 function initApp(){
-
-// ── STATE ──
-let urls = {
-  jq: localStorage.getItem('mayse_url_jq')||'',
-  sp: localStorage.getItem('mayse_url_sp')||''
-};
-let tokens = {
-  jq: localStorage.getItem('mayse_token_jq')||'',
-  sp: localStorage.getItem('mayse_token_sp')||''
-};
-let dados = { jq:{vendas:[],encomendas:[],estoque:[],compras:[],pagamentos:[]}, sp:{vendas:[],encomendas:[],estoque:[],compras:[],pagamentos:[]} };
-let lojaAtiva = 'all'; // all | jq | sp
-let filtroEncAtual='todos', filtroPagAtual='todos', filtroEstAtual='todos', filtroComprasAtual='todos', filtroProdAtual='todos';
 
 // ── INIT ──
 const today=new Date(), d7=new Date(today); d7.setDate(d7.getDate()-7);
