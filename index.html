@@ -65,14 +65,19 @@ body{font-family:'Sora',sans-serif;background:var(--cream);color:var(--grafite);
 .produto-card-num{font-size:10px;font-weight:600;color:var(--vj);text-transform:uppercase;letter-spacing:1px;}
 .btn-remove-prod{background:none;border:none;color:var(--light);cursor:pointer;font-size:18px;padding:0;line-height:1;}
 
-/* PRODUTO SELECTOR */
-.prod-select-wrap{position:relative;}
-.prod-select{width:100%;padding:12px 14px;background:var(--branco);border:1.5px solid var(--border);border-radius:var(--radius-sm);font-family:'Sora',sans-serif;font-size:14px;color:var(--grafite);outline:none;-webkit-appearance:none;cursor:pointer;}
-.prod-select:focus{border-color:var(--vj);}
-.stock-badge{display:inline-flex;align-items:center;gap:4px;font-size:10px;font-weight:600;padding:3px 8px;border-radius:20px;margin-top:5px;}
-.stock-badge.ok{background:var(--vj-pale);color:var(--vf);}
-.stock-badge.low{background:var(--gold-pale);color:var(--gold);}
-.stock-badge.zero{background:var(--red-pale);color:var(--red);}
+/* PRODUTO SEARCH */
+.prod-search-wrap{position:relative;}
+.prod-search-input{width:100%;padding:12px 14px;background:var(--branco);border:1.5px solid var(--border);border-radius:var(--radius-sm);font-family:'Sora',sans-serif;font-size:14px;color:var(--grafite);outline:none;transition:border-color .2s;}
+.prod-search-input:focus{border-color:var(--vj);}
+.prod-search-input::placeholder{color:var(--light);}
+.prod-dropdown{display:none;position:absolute;top:calc(100% + 4px);left:0;right:0;background:var(--branco);border:1.5px solid var(--vj);border-radius:var(--radius-sm);z-index:50;max-height:220px;overflow-y:auto;box-shadow:0 4px 20px rgba(18,52,13,.15);}
+.prod-dropdown.open{display:block;}
+.prod-option{padding:10px 14px;cursor:pointer;font-size:13px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;}
+.prod-option:last-child{border-bottom:none;}
+.prod-option:hover{background:var(--vj-pale);}
+.prod-option.disabled{opacity:.4;cursor:not-allowed;pointer-events:none;}
+.prod-option-name{font-weight:500;}
+.prod-option-info{font-size:11px;color:var(--light);text-align:right;}
 
 /* TOTAL */
 .total-card{background:var(--vf);border-radius:var(--radius);padding:14px 18px;margin:14px 0;display:flex;align-items:center;justify-content:space-between;position:relative;overflow:hidden;}
@@ -601,10 +606,16 @@ function renderProdutos(){
         <button class="btn-remove-prod" onclick="removerProduto(${p.id})">×</button>
       </div>
       <div class="form-group" style="margin-bottom:8px;">
-        <select class="prod-select" onchange="selecionarProduto(${p.id},this)">
-          <option value="">— Selecione um produto —</option>
-          ${estoqueOpts}
-        </select>
+        <div class="prod-search-wrap" id="wrap-${p.id}">
+          <input class="prod-search-input" id="search-${p.id}"
+            placeholder="🔍 Buscar produto…"
+            value="${p.nome||''}"
+            autocomplete="off"
+            oninput="filtrarProdOpts(${p.id},this.value)"
+            onfocus="abrirDropdown(${p.id})"
+            onblur="fecharDropdownDelay(${p.id})">
+          <div class="prod-dropdown" id="drop-${p.id}"></div>
+        </div>
         <div id="stock-info-${p.id}" style="margin-top:4px;"></div>
       </div>
       <div class="form-row">
@@ -624,31 +635,73 @@ function renderProdutos(){
   });
 }
 
-function selecionarProduto(id,sel){
+function abrirDropdown(id){
+  filtrarProdOpts(id, document.getElementById('search-'+id)?.value||'');
+  const drop=document.getElementById('drop-'+id);
+  if(drop) drop.classList.add('open');
+}
+
+function fecharDropdownDelay(id){
+  setTimeout(()=>{
+    const drop=document.getElementById('drop-'+id);
+    if(drop) drop.classList.remove('open');
+  }, 200);
+}
+
+function filtrarProdOpts(id, q){
+  const drop=document.getElementById('drop-'+id);
+  if(!drop) return;
+  const filtered = q.trim()
+    ? estoque.filter(ep=>ep.Nome.toLowerCase().includes(q.toLowerCase()))
+    : estoque;
+  if(!filtered.length){
+    drop.innerHTML='<div class="prod-option disabled"><span class="prod-option-name">Nenhum produto encontrado</span></div>';
+    drop.classList.add('open');
+    return;
+  }
+  drop.innerHTML = filtered.map(ep=>{
+    const qtd=parseInt(ep.Qtd||0);
+    const isZero=qtd===0;
+    const isLow=qtd>0&&qtd<=parseInt(ep.Alerta_Minimo||5);
+    const badge=isZero?'🔴':isLow?'🟡':'';
+    const infoText=isZero?'Zerado':isLow?`⚠️ ${qtd} restantes · R$ ${fmt(ep.Preco_Venda)}`:`R$ ${fmt(ep.Preco_Venda)} · ${qtd} un.`;
+    return `<div class="prod-option${isZero?' disabled':''}"
+      onmousedown="selecionarProdutoBusca(${id},'${escapeHtml(ep.Nome)}',${ep.Preco_Venda},${qtd},${ep.Alerta_Minimo||5})">
+      <span class="prod-option-name">${badge} ${escapeHtml(ep.Emoji||'🌷')} ${escapeHtml(ep.Nome)}</span>
+      <span class="prod-option-info">${infoText}</span>
+    </div>`;
+  }).join('');
+  drop.classList.add('open');
+}
+
+function selecionarProdutoBusca(id, nome, preco, qtdEst, alMin){
   const p=produtos.find(x=>x.id===id);
   if(!p) return;
-  p.nome=sel.value;
-  const opt=sel.options[sel.selectedIndex];
-  const preco=parseFloat(opt.getAttribute('data-preco')||0);
-  const qtdEst=parseInt(opt.getAttribute('data-qtd')||0);
-  p.valorUnit=preco;
-  document.getElementById('val-'+id).value=preco.toFixed(2);
-  document.getElementById('sub-'+id).textContent='R$ '+fmt(p.qtd*preco);
+  p.nome=nome;
+  p.valorUnit=parseFloat(preco)||0;
 
-  // Stock badge
+  const searchEl=document.getElementById('search-'+id);
+  const valEl=document.getElementById('val-'+id);
+  const subEl=document.getElementById('sub-'+id);
+  const drop=document.getElementById('drop-'+id);
   const infoEl=document.getElementById('stock-info-'+id);
-  const min=estoque.find(e=>e.Nome===p.nome);
-  const alMin=parseInt(min?.Alerta_Minimo||5);
-  if(qtdEst===0) infoEl.innerHTML='<span class="stock-badge zero">🔴 Zerado — não disponível</span>';
-  else if(qtdEst<=alMin) infoEl.innerHTML=`<span class="stock-badge low">🟡 Estoque baixo — ${qtdEst} restantes</span>`;
-  else infoEl.innerHTML=`<span class="stock-badge ok">✓ ${qtdEst} disponíveis</span>`;
 
+  if(searchEl) searchEl.value=nome;
+  if(valEl) valEl.value=p.valorUnit.toFixed(2);
+  if(subEl) subEl.textContent='R$ '+fmt(p.qtd*p.valorUnit);
+  if(drop) drop.classList.remove('open');
+
+  if(infoEl){
+    if(qtdEst===0) infoEl.innerHTML='<span class="stock-badge zero">🔴 Zerado — não disponível</span>';
+    else if(qtdEst<=alMin) infoEl.innerHTML=`<span class="stock-badge low">🟡 Estoque baixo — ${qtdEst} restantes</span>`;
+    else infoEl.innerHTML=`<span class="stock-badge ok">✓ ${qtdEst} disponíveis</span>`;
+  }
   calcTotal();
 }
 
-function atualizarSubtotalCard(card){
-  // noop placeholder
-}
+function selecionarProduto(){} // mantido por compatibilidade
+
+function atualizarSubtotalCard(card){}
 
 function updateProd(id,field,val){
   const p=produtos.find(x=>x.id===id);
