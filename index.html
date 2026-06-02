@@ -360,6 +360,8 @@ body{font-family:'Sora',sans-serif;background:var(--cream);color:var(--grafite);
 
 <script>
 // ── STATE ──
+function escapeHtml(s){if(!s)return '—';return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+function setEl(id,v){const el=document.getElementById(id);if(el)el.textContent=v;}
 let produtos = [];
 let totalVenda = 0;
 let pagamentosSelecionados = {};
@@ -402,7 +404,7 @@ function obterLocalizacao(){
     updateLocUI();
   },()=>{locInfo.cidade='Localização negada';updateLocUI();},{timeout:8000});
 }
-function updateLocUI(){document.getElementById('chip-loc').textContent='📍 '+locInfo.cidade;}
+function updateLocUI(){const cl=document.getElementById('chip-loc');if(cl)cl.textContent='📍 '+locInfo.cidade;}
 
 // ── OPERADOR ──
 function updateOperadorUI(){
@@ -429,7 +431,7 @@ async function carregarEstoque(){
     renderEstoque();
     atualizarAlertas();
     renderSelects();
-  }catch(e){console.log('Erro ao carregar estoque:',e);}
+  }catch(e){}
 }
 
 function atualizarAlertas(){
@@ -663,8 +665,8 @@ function calcTotal(){
   totalVenda=produtos.reduce((s,p)=>s+(p.qtd*(p.valorUnit||0)),0);
   document.getElementById('total-display').innerHTML='<span>R$</span>'+fmt(totalVenda);
   const n=produtos.length;
-  document.getElementById('total-itens-desc').textContent=n===1?'1 produto':`${n} produtos`;
-  document.getElementById('total-itens-label').textContent=n===1?'1 item':`${n} itens`;
+  setEl('total-itens-desc',n===1?'1 produto':`${n} produtos`);
+  setEl('total-itens-label',n===1?'1 item':`${n} itens`);
   recalcBalance();
 }
 
@@ -699,7 +701,7 @@ function recalcBalance(){
   const pago=Object.values(pagamentosSelecionados).reduce((s,v)=>s+v,0);
   const diff=pago-totalVenda;
   if(Math.abs(diff)<0.01){bar.className='balance-bar ok';bar.innerHTML=`<span style="font-weight:500;">✓ Pagamento completo</span><span style="font-size:17px;font-weight:700;">R$ ${fmt(pago)}</span>`;tc.classList.remove('visible');}
-  else if(diff>0){bar.className='balance-bar over';bar.innerHTML=`<span style="font-weight:500;">Troco a devolver</span><span style="font-size:17px;font-weight:700;">+R$ ${fmt(diff)}</span>`;tc.classList.add('visible');document.getElementById('troco-value').textContent='R$ '+fmt(diff);}
+  else if(diff>0){bar.className='balance-bar over';bar.innerHTML=`<span style="font-weight:500;">Troco a devolver</span><span style="font-size:17px;font-weight:700;">+R$ ${fmt(diff)}</span>`;tc.classList.add('visible');setEl('troco-value','R$ '+fmt(diff));}
   else{bar.className='balance-bar under';bar.innerHTML=`<span style="font-weight:500;">⚠ Falta</span><span style="font-size:17px;font-weight:700;">R$ ${fmt(Math.abs(diff))}</span>`;tc.classList.remove('visible');}
 }
 
