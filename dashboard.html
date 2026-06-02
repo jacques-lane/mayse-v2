@@ -849,6 +849,10 @@ let dados = { jq:{vendas:[],encomendas:[],estoque:[],compras:[],pagamentos:[]}, 
 let lojaAtiva = 'all';
 let filtroEncAtual='todos', filtroPagAtual='todos', filtroEstAtual='todos', filtroComprasAtual='todos', filtroProdAtual='todos';
 
+// Helper global seguro — nunca lança erro se elemento não existir
+function setEl(id,v){const el=document.getElementById(id);if(el)el.textContent=v;}
+function escapeHtml(s){if(!s) return '—'; return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#039;');}
+
 // ── SAVE URL (global, chamado pelos botões do setup) ──
 function saveUrl(loja){
   const url=document.getElementById('url-'+loja).value.trim();
@@ -924,19 +928,6 @@ function fmt(n){return 'R$ '+parseFloat(n||0).toLocaleString('pt-BR',{minimumFra
 function fmtN(n){return parseFloat(n||0).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});}
 
 // ── URLS ──
-function saveUrl(loja){
-  const url=document.getElementById('url-'+loja).value.trim();
-  const tok=document.getElementById('token-'+loja).value.trim();
-  if(!url.startsWith('https://script.google.com')){alert('URL inválida');return;}
-  if(!tok){alert('Informe o token secreto');return;}
-  urls[loja]=url; tokens[loja]=tok;
-  localStorage.setItem('mayse_url_'+loja,url);
-  localStorage.setItem('mayse_token_'+loja,tok);
-  const labels={jq:'Juquiá',sp:'São Paulo'};
-  const cls={jq:'cb-jq',sp:'cb-sp'};
-  document.getElementById('status-'+loja).innerHTML=`<span class="connected-badge ${cls[loja]}">✓ ${labels[loja]} conectada</span>`;
-  if(urls.jq&&urls.sp&&tokens.jq&&tokens.sp) document.getElementById('setup-card').style.display='none';
-}
 
 // ── LOJA SELECTOR ──
 function setLoja(loja, btn){
@@ -972,7 +963,7 @@ async function loadData(){
       dados[loja].compras=(results[3].data||[]).filter(r=>{const d=parseDate(r.Data);return d&&d>=fromD&&d<=toD;});
       dados[loja].pagamentos=results[4].data||[];
     }));
-    document.getElementById('period-label').textContent=`${new Date(from).toLocaleDateString('pt-BR')} – ${new Date(to).toLocaleDateString('pt-BR')}`;
+    setEl('period-label',`${new Date(from).toLocaleDateString('pt-BR')} – ${new Date(to).toLocaleDateString('pt-BR')}`);
     renderAll();
   }catch(err){showError('Erro: '+err.message);}
   setLoading(false);
@@ -1001,19 +992,19 @@ function renderKPIs(){
   const fatSp=vSp.reduce((s,r)=>s+parseFloat(r.Total||0),0);
   const n=vAll.length, ticket=n>0?fat/n:0;
 
-  document.getElementById('kpi-fat').textContent=fmt(fat);
-  document.getElementById('kpi-fat-sub').textContent=`em ${n} venda${n!==1?'s':''}`;
+  setEl('kpi-fat',fmt(fat));
+  setEl('kpi-fat-sub',`em ${n} venda${n!==1?'s':''}`);
   document.getElementById('kpi-fat-split').innerHTML=lojaAtiva==='all'?`<div class="kpi-split-item jq">JQ ${fmt(fatJq)}</div><div class="kpi-split-item sp">SP ${fmt(fatSp)}</div>`:'';
-  document.getElementById('kpi-vendas').textContent=n;
-  document.getElementById('kpi-vendas-sub').textContent='no período';
+  setEl('kpi-vendas',n);
+  setEl('kpi-vendas-sub','no período');
   document.getElementById('kpi-vendas-split').innerHTML=lojaAtiva==='all'?`<div class="kpi-split-item jq">JQ ${vJq.length}</div><div class="kpi-split-item sp">SP ${vSp.length}</div>`:'';
-  document.getElementById('kpi-ticket').textContent=fmt(ticket);
+  setEl('kpi-ticket',fmt(ticket));
 
   const hoje=new Date();hoje.setHours(0,0,0,0);
   const em7=new Date(hoje);em7.setDate(em7.getDate()+7);
   const prox7=getPagamentos().filter(r=>{const d=parseDate(r.Vencimento);const s=(r.Status||'').toLowerCase();return d&&d>=hoje&&d<=em7&&s!=='pago';});
-  document.getElementById('kpi-apagar').textContent=fmt(prox7.reduce((s,r)=>s+parseFloat(r.Valor||0),0));
-  document.getElementById('kpi-apagar-sub').textContent=`${prox7.length} conta${prox7.length!==1?'s':''} · 7 dias`;
+  setEl('kpi-apagar',fmt(prox7.reduce((s,r)=>s+parseFloat(r.Valor||0),0)));
+  setEl('kpi-apagar-sub',`${prox7.length} conta${prox7.length!==1?'s':''} · 7 dias`);
 }
 
 // ── FATURAMENTO (barras empilhadas por loja) ──
@@ -1139,8 +1130,8 @@ function renderRecebimentos(){
   tbody.innerHTML=v.map(r=>`<tr>
     <td><span class="loja-badge ${r._loja}">${lojaNome(r._loja)}</span></td>
     <td>${fmtDateBR(r.Data)}</td><td>${fmtHora(r.Hora)}</td>
-    <td><strong>${r.Cliente||'—'}</strong></td>
-    <td style="max-width:150px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" title="${r.Produtos||''}">${r.Produtos||'—'}</td>
+    <td><strong>${escapeHtml(r.Cliente)||'—'}</strong></td>
+    <td style="max-width:150px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" title="${escapeHtml(r.Produtos)||''}">${escapeHtml(r.Produtos)||'—'}</td>
     <td style="text-align:right">${parseFloat(r.Dinheiro||0)>0?fmt(r.Dinheiro):'—'}</td>
     <td style="text-align:right">${parseFloat(r.Pix||0)>0?fmt(r.Pix):'—'}</td>
     <td style="text-align:right">${parseFloat(r.Credito||0)>0?fmt(r.Credito):'—'}</td>
@@ -1179,7 +1170,7 @@ function renderTimelineContas(){
     const d=parseDate(r.Vencimento),diff=Math.floor((d-hoje)/(1000*60*60*24));
     const cor=diff===0?'#F489A7':diff<=3?'#c9933a':'#83AB33';
     const diffLabel=diff===0?'Hoje':diff===1?'Amanhã':`Em ${diff} dias`;
-    return `<div class="tl-item"><div class="tl-dot-wrap"><div class="tl-dot" style="background:${cor}"></div>${i<proximas.length-1?'<div class="tl-line"></div>':''}</div><div class="tl-body"><div class="tl-date">${fmtDateBR(d)} · <span style="color:${cor};font-weight:600;">${diffLabel}</span></div><div class="tl-desc">${r.Descricao||'—'}</div><div class="tl-cat">${r.Categoria||''}</div></div><div class="tl-val" style="color:${cor}">${fmt(r.Valor)}</div></div>`;
+    return `<div class="tl-item"><div class="tl-dot-wrap"><div class="tl-dot" style="background:${cor}"></div>${i<proximas.length-1?'<div class="tl-line"></div>':''}</div><div class="tl-body"><div class="tl-date">${fmtDateBR(d)} · <span style="color:${cor};font-weight:600;">${diffLabel}</span></div><div class="tl-desc">${escapeHtml(r.Descricao)||'—'}</div><div class="tl-cat">${r.Categoria||''}</div></div><div class="tl-val" style="color:${cor}">${fmt(r.Valor)}</div></div>`;
   }).join('');
 }
 
@@ -1255,8 +1246,8 @@ function _renderCompras(){
   tbody.innerHTML=src.map(r=>`<tr>
     <td><span class="loja-badge ${r._loja}">${lojaNome(r._loja)}</span></td>
     <td>${fmtDateBR(r.Data)}</td>
-    <td><strong>${r.Fornecedor||'—'}</strong></td>
-    <td>${r.Produto||'—'}</td>
+    <td><strong>${escapeHtml(r.Fornecedor)||'—'}</strong></td>
+    <td>${escapeHtml(r.Produto)||'—'}</td>
     <td style="text-align:center">${r.Qtd||0}</td>
     <td style="text-align:right">${fmt(r.Valor_Unit_Custo)}</td>
     <td style="text-align:right;font-weight:700;color:var(--vf)">${fmt(r.Valor_Total)}</td>
@@ -1295,7 +1286,7 @@ function _renderPagamentos(){
   const tbody=document.getElementById('tbody-pagamentos');
   tbody.innerHTML=filtrado.map(r=>`<tr>
     <td>${fmtDateBR(r._d)}</td>
-    <td><strong>${r.Descricao||'—'}</strong></td>
+    <td><strong>${escapeHtml(r.Descricao)||'—'}</strong></td>
     <td><span style="font-size:11px;color:var(--mid)">${r.Categoria||'—'}</span></td>
     <td><strong>${fmt(r.Valor)}</strong></td>
     <td><span class="badge ${badgeMap[r._status]||'pendente'}">${labelMap[r._status]||r._status}</span></td>
@@ -1327,9 +1318,9 @@ function _renderEncomendas(){
     return `<tr>
       <td><span class="loja-badge ${r._loja}">${lojaNome(r._loja)}</span></td>
       <td>${fmtDateBR(r.Data)}</td><td>${fmtHora(r.Hora)}</td>
-      <td><strong>${r.Cliente||'—'}</strong></td>
+      <td><strong>${escapeHtml(r.Cliente)||'—'}</strong></td>
       <td>${r.Telefone||'—'}</td>
-      <td style="max-width:180px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" title="${r.Descricao||''}">${r.Descricao||'—'}</td>
+      <td style="max-width:180px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" title="${escapeHtml(r.Descricao)||''}">${escapeHtml(r.Descricao)||'—'}</td>
       <td><span class="badge ${badgeMap[s]||'pendente'}">${labelMap[s]||r.Status||'Pendente'}</span></td>
       <td>${r.Operador||'—'}</td>
     </tr>`;
@@ -1475,7 +1466,7 @@ function showSection(name,btn){
     'visao-geral':'Visão Geral','produtos':'Produtos','recebimentos':'Recebimentos',
     'encomendas':'Encomendas','estoque':'Estoque','compras':'Compras','pagamentos':'Pagamentos'
   };
-  document.getElementById('section-title').textContent=titles[name]||name;
+  setEl('section-title',titles[name]||name);
   closeSidebar();
 }
 
@@ -1620,9 +1611,9 @@ function closeSidebar(){document.getElementById('sidebar').classList.remove('ope
 
 function setLoading(on,msg){
   document.getElementById('loading-overlay').classList.toggle('show',on);
-  if(msg) document.getElementById('loading-text').textContent=msg;
+  if(msg) setEl('loading-text',msg);
   document.getElementById('btn-spinner').style.display=on?'block':'none';
-  document.getElementById('btn-label').textContent=on?'Carregando…':'Carregar';
+  setEl('btn-label',on?'Carregando…':'Carregar');
   document.querySelector('.btn-load').disabled=on;
 }
 function showError(msg){const el=document.getElementById('error-banner');el.textContent=msg;el.classList.add('show');}
