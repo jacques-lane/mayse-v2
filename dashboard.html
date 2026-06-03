@@ -255,16 +255,14 @@ body{font-family:'Sora',sans-serif;background:var(--cream);color:var(--grafite);
     <div class="brand-name"><strong>Mayse</strong><br>Floricultura & Garden</div>
   </div>
   <nav class="sidebar-nav">
-    <div class="nav-section">Operacional</div>
     <button class="nav-item active" onclick="showSection('visao-geral',this)"><span class="ni">📊</span><span>Visão Geral</span></button>
-    <button class="nav-item" onclick="showSection('produtos',this)"><span class="ni">🌷</span><span>Produtos</span></button>
     <button class="nav-item" onclick="showSection('recebimentos',this)"><span class="ni">💰</span><span>Recebimentos</span></button>
-    <button class="nav-item" onclick="showSection('encomendas',this)"><span class="ni">📋</span><span>Encomendas</span></button>
-    <div class="nav-section">Gestão</div>
+    <button class="nav-item" onclick="showSection('financeiro',this)"><span class="ni">📈</span><span>Financeiro</span></button>
+    <button class="nav-item" onclick="showSection('pagamentos',this)"><span class="ni">💳</span><span>Pagamentos</span></button>
     <button class="nav-item" onclick="showSection('estoque',this)"><span class="ni">📦</span><span>Estoque</span></button>
     <button class="nav-item" onclick="showSection('compras',this)"><span class="ni">🛍️</span><span>Compras</span></button>
-    <button class="nav-item" onclick="showSection('pagamentos',this)"><span class="ni">💳</span><span>Pagamentos</span></button>
-    <button class="nav-item" onclick="showSection('financeiro',this)"><span class="ni">📈</span><span>Financeiro</span></button>
+    <button class="nav-item" onclick="showSection('produtos',this)"><span class="ni">🌷</span><span>Produtos</span></button>
+    <button class="nav-item" onclick="showSection('encomendas',this)"><span class="ni">📋</span><span>Encomendas</span></button>
   </nav>
   <div class="sidebar-footer">v2.0 · Mayse · 2 lojas</div>
 </aside>
@@ -277,7 +275,8 @@ body{font-family:'Sora',sans-serif;background:var(--cream);color:var(--grafite);
     </div>
     <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
       <div class="loja-tabs" id="loja-tabs">
-        <button class="loja-tab active-all" onclick="setLoja('all',this)">🌿 Consolidado</button>
+        <button class="loja-tab active-all" onclick="setLoja('all',this)">🌿 JQ + SP</button>
+        <button class="loja-tab" onclick="setLoja('tudo',this)">🔵 Tudo</button>
         <button class="loja-tab" onclick="setLoja('jq',this)"><span class="loja-dot" style="background:var(--jq)"></span>Juquiá</button>
         <button class="loja-tab" onclick="setLoja('sp',this)"><span class="loja-dot" style="background:var(--sp)"></span>São Paulo</button>
         <button class="loja-tab" onclick="setLoja('ps',this)"><span class="loja-dot" style="background:#9c56b8"></span>Pessoal</button>
@@ -302,24 +301,26 @@ body{font-family:'Sora',sans-serif;background:var(--cream);color:var(--grafite);
       <div class="setup-title">⚙️ Configurar as duas lojas</div>
       <div class="setup-desc">Cole as URLs do Apps Script de cada planilha. Cada loja tem sua própria planilha e URL.</div>
       <div class="setup-lojas">
+      <div class="setup-lojas" style="grid-template-columns:1fr 1fr 1fr;">
         <div class="setup-loja">
           <div class="setup-loja-label"><span style="width:10px;height:10px;border-radius:50%;background:var(--jq);display:inline-block;"></span> Loja Juquiá</div>
           <input class="setup-input" id="url-jq" type="url" placeholder="https://script.google.com/macros/s/...">
           <input class="setup-input" id="token-jq" type="password" placeholder="Token secreto Juquiá">
-          <div style="display:flex;gap:6px;align-items:center;">
-            <button class="btn-save" onclick="saveUrl('jq')">Salvar</button>
-            <div id="status-jq"></div>
-          </div>
+          <div style="display:flex;gap:6px;align-items:center;"><button class="btn-save" onclick="saveUrl('jq')">Salvar</button><div id="status-jq"></div></div>
         </div>
         <div class="setup-loja">
           <div class="setup-loja-label"><span style="width:10px;height:10px;border-radius:50%;background:var(--sp);display:inline-block;"></span> Loja São Paulo</div>
           <input class="setup-input" id="url-sp" type="url" placeholder="https://script.google.com/macros/s/...">
-          <input class="setup-input" id="token-sp" type="password" placeholder="Token secreto São Paulo">
-          <div style="display:flex;gap:6px;align-items:center;">
-            <button class="btn-save" onclick="saveUrl('sp')">Salvar</button>
-            <div id="status-sp"></div>
-          </div>
+          <input class="setup-input" id="token-sp" type="password" placeholder="Token secreto SP">
+          <div style="display:flex;gap:6px;align-items:center;"><button class="btn-save" onclick="saveUrl('sp')">Salvar</button><div id="status-sp"></div></div>
         </div>
+        <div class="setup-loja">
+          <div class="setup-loja-label"><span style="width:10px;height:10px;border-radius:50%;background:#9c56b8;display:inline-block;"></span> Pessoal</div>
+          <input class="setup-input" id="url-ps" type="url" placeholder="https://script.google.com/macros/s/...">
+          <input class="setup-input" id="token-ps" type="password" placeholder="Token secreto Pessoal">
+          <div style="display:flex;gap:6px;align-items:center;"><button class="btn-save" onclick="saveUrl('ps')">Salvar</button><div id="status-ps"></div></div>
+        </div>
+      </div>
       </div>
     </div>
 
@@ -995,13 +996,19 @@ const SENHA_DASHBOARD = 'mayse2026';
 // ── STATE (global, disponível antes do login) ──
 let urls = {
   jq: localStorage.getItem('mayse_url_jq')||'',
-  sp: localStorage.getItem('mayse_url_sp')||''
+  sp: localStorage.getItem('mayse_url_sp')||'',
+  ps: localStorage.getItem('mayse_url_ps')||''
 };
 let tokens = {
   jq: localStorage.getItem('mayse_token_jq')||'',
-  sp: localStorage.getItem('mayse_token_sp')||''
+  sp: localStorage.getItem('mayse_token_sp')||'',
+  ps: localStorage.getItem('mayse_token_ps')||''
 };
-let dados = { jq:{vendas:[],encomendas:[],estoque:[],compras:[],pagamentos:[]}, sp:{vendas:[],encomendas:[],estoque:[],compras:[],pagamentos:[]} };
+let dados = {
+  jq:{vendas:[],encomendas:[],estoque:[],compras:[],pagamentos:[]},
+  sp:{vendas:[],encomendas:[],estoque:[],compras:[],pagamentos:[]},
+  ps:{vendas:[],encomendas:[],estoque:[],compras:[],pagamentos:[]}
+};
 let lojaAtiva = 'all';
 let filtroEncAtual='todos', filtroPagAtual='todos', filtroEstAtual='todos', filtroComprasAtual='todos', filtroProdAtual='todos';
 
@@ -1018,10 +1025,9 @@ function saveUrl(loja){
   urls[loja]=url; tokens[loja]=tok;
   localStorage.setItem('mayse_url_'+loja,url);
   localStorage.setItem('mayse_token_'+loja,tok);
-  const labels={jq:'Juquiá',sp:'São Paulo'};
-  const cls={jq:'cb-jq',sp:'cb-sp'};
+  const labels={jq:'Juquiá',sp:'São Paulo',ps:'Pessoal'};
+  const cls={jq:'cb-jq',sp:'cb-sp',ps:'cb-ps'};
   document.getElementById('status-'+loja).innerHTML=`<span class="connected-badge ${cls[loja]}">✓ ${labels[loja]} conectada</span>`;
-  if(urls.jq&&urls.sp&&tokens.jq&&tokens.sp) document.getElementById('setup-card').style.display='none';
   alert(`✓ ${labels[loja]} salva! Clique em Carregar para ver os dados.`);
 }
 
@@ -1052,10 +1058,12 @@ function initApp(){
 }
 
 function initSetup(){
-  if(urls.jq){document.getElementById('url-jq').value=urls.jq;}
-  if(urls.sp){document.getElementById('url-sp').value=urls.sp;}
+  if(urls.jq) document.getElementById('url-jq').value=urls.jq;
+  if(urls.sp) document.getElementById('url-sp').value=urls.sp;
+  if(urls.ps) document.getElementById('url-ps').value=urls.ps;
   if(tokens.jq){document.getElementById('token-jq').value=tokens.jq;document.getElementById('status-jq').innerHTML='<span class="connected-badge cb-jq">✓ Juquiá conectada</span>';}
   if(tokens.sp){document.getElementById('token-sp').value=tokens.sp;document.getElementById('status-sp').innerHTML='<span class="connected-badge cb-sp">✓ SP conectada</span>';}
+  if(tokens.ps){document.getElementById('token-ps').value=tokens.ps;document.getElementById('status-ps').innerHTML='<span class="connected-badge cb-ps">✓ Pessoal conectada</span>';}
   if(urls.jq&&urls.sp&&tokens.jq&&tokens.sp) document.getElementById('setup-card').style.display='none';
 }
 
@@ -1064,38 +1072,71 @@ function initSetup(){
 // No selector 'ps' filtramos registros com _loja='ps' ou Loja='pessoal'
 
 // ── LOJA SELECTOR atualizado ──
+
+
+// ── LOJA SELECTOR ──
 function setLoja(loja, btn){
   lojaAtiva=loja;
   document.querySelectorAll('.loja-tab').forEach(b=>{b.className='loja-tab';});
-  const cls={'all':'active-all','jq':'active-jq','sp':'active-sp','ps':'active-ps'};
+  const cls={'all':'active-all','tudo':'active-tudo','jq':'active-jq','sp':'active-sp','ps':'active-ps'};
   btn.className='loja-tab '+(cls[loja]||'active-all');
-  if(Object.values(dados.jq.vendas).length||Object.values(dados.sp.vendas).length) renderAll();
+  if(Object.keys(dados.jq.vendas).length||Object.keys(dados.sp.vendas).length||Object.keys(dados.ps.vendas).length) renderAll();
 }
 
 function getVendas(){
-  if(lojaAtiva==='all') return [...dados.jq.vendas.map(r=>({...r,_loja:'jq'})),...dados.sp.vendas.map(r=>({...r,_loja:'sp'})),...(dados.ps?.vendas||[]).map(r=>({...r,_loja:'ps'}))];
-  if(lojaAtiva==='ps') return (dados.ps?.vendas||[]).map(r=>({...r,_loja:'ps'}));
-  return dados[lojaAtiva].vendas.map(r=>({...r,_loja:lojaAtiva}));
+  const jq=dados.jq.vendas.map(r=>({...r,_loja:'jq'}));
+  const sp=dados.sp.vendas.map(r=>({...r,_loja:'sp'}));
+  const ps=dados.ps.vendas.map(r=>({...r,_loja:'ps'}));
+  if(lojaAtiva==='tudo') return [...jq,...sp,...ps];
+  if(lojaAtiva==='all')  return [...jq,...sp];         // JQ+SP, sem pessoal
+  if(lojaAtiva==='jq')   return jq;
+  if(lojaAtiva==='sp')   return sp;
+  if(lojaAtiva==='ps')   return ps;
+  return [...jq,...sp];
 }
 function getEncomendas(){
-  if(lojaAtiva==='all') return [...dados.jq.encomendas.map(r=>({...r,_loja:'jq'})),...dados.sp.encomendas.map(r=>({...r,_loja:'sp'}))];
-  if(lojaAtiva==='ps') return [];
-  return dados[lojaAtiva].encomendas.map(r=>({...r,_loja:lojaAtiva}));
+  const jq=dados.jq.encomendas.map(r=>({...r,_loja:'jq'}));
+  const sp=dados.sp.encomendas.map(r=>({...r,_loja:'sp'}));
+  const ps=dados.ps.encomendas.map(r=>({...r,_loja:'ps'}));
+  if(lojaAtiva==='tudo') return [...jq,...sp,...ps];
+  if(lojaAtiva==='all')  return [...jq,...sp];
+  if(lojaAtiva==='jq')   return jq;
+  if(lojaAtiva==='sp')   return sp;
+  if(lojaAtiva==='ps')   return ps;
+  return [...jq,...sp];
 }
 function getEstoque(loja){
-  if(loja==='all') return [...dados.jq.estoque.map(r=>({...r,_loja:'jq'})),...dados.sp.estoque.map(r=>({...r,_loja:'sp'}))];
-  if(loja==='ps') return [];
-  return (dados[loja]?.estoque||[]).map(r=>({...r,_loja:loja}));
+  const jq=dados.jq.estoque.map(r=>({...r,_loja:'jq'}));
+  const sp=dados.sp.estoque.map(r=>({...r,_loja:'sp'}));
+  const ps=dados.ps.estoque.map(r=>({...r,_loja:'ps'}));
+  if(loja==='tudo') return [...jq,...sp,...ps];
+  if(loja==='all')  return [...jq,...sp];
+  if(loja==='jq')   return jq;
+  if(loja==='sp')   return sp;
+  if(loja==='ps')   return ps;
+  return [...jq,...sp];
 }
 function getCompras(){
-  if(lojaAtiva==='all') return [...dados.jq.compras.map(r=>({...r,_loja:'jq'})),...dados.sp.compras.map(r=>({...r,_loja:'sp'}))];
-  if(lojaAtiva==='ps') return [];
-  return (dados[lojaAtiva]?.compras||[]).map(r=>({...r,_loja:lojaAtiva}));
+  const jq=dados.jq.compras.map(r=>({...r,_loja:'jq'}));
+  const sp=dados.sp.compras.map(r=>({...r,_loja:'sp'}));
+  const ps=dados.ps.compras.map(r=>({...r,_loja:'ps'}));
+  if(lojaAtiva==='tudo') return [...jq,...sp,...ps];
+  if(lojaAtiva==='all')  return [...jq,...sp];
+  if(lojaAtiva==='jq')   return jq;
+  if(lojaAtiva==='sp')   return sp;
+  if(lojaAtiva==='ps')   return ps;
+  return [...jq,...sp];
 }
 function getPagamentos(){
-  const pags=[...dados.jq.pagamentos,...dados.sp.pagamentos];
-  if(dados.ps?.pagamentos) pags.push(...dados.ps.pagamentos);
-  return pags;
+  const jq=dados.jq.pagamentos;
+  const sp=dados.sp.pagamentos;
+  const ps=dados.ps.pagamentos;
+  if(lojaAtiva==='tudo') return [...jq,...sp,...ps];
+  if(lojaAtiva==='all')  return [...jq,...sp];
+  if(lojaAtiva==='jq')   return jq;
+  if(lojaAtiva==='sp')   return sp;
+  if(lojaAtiva==='ps')   return ps;
+  return [...jq,...sp];
 }
 function lojaNome(l){return l==='jq'?'Juquiá':l==='sp'?'São Paulo':l==='ps'?'Pessoal':'—';}
 
@@ -1203,7 +1244,7 @@ async function submitRecebimento(){
     loja_tag: loja==='ps'?'pessoal':loja
   };
   try{
-    const lojaAlvo = loja==='ps'?'jq':loja; // pessoal usa planilha jq com tag
+    const lojaAlvo = loja; // cada loja tem sua própria planilha agora
     await postToLoja(lojaAlvo, payload);
     showMsg('frec-msg','ok','✓ Recebimento salvo! Recarregue para ver.');
     setTimeout(()=>fecharModal('recebimento'),1800);
@@ -1233,13 +1274,15 @@ async function submitPerda(){
   setFLoading('btn-fper','sp-fper',false);
 }
 
-// ── CSS extra para loja pessoal ──
+// ── CSS extra para lojas ──
 (function(){
   const s=document.createElement('style');
   s.textContent=`
     .loja-tab.active-ps{background:#9c56b8;color:white;}
+    .loja-tab.active-tudo{background:var(--grafite);color:white;}
     .loja-badge.ps{background:#f3e8ff;color:#6b21a8;}
     .kpi-split-item.ps{background:#f3e8ff;color:#6b21a8;}
+    .cb-ps{background:#f3e8ff;color:#6b21a8;}
   `;
   document.head.appendChild(s);
 })();
@@ -1249,22 +1292,18 @@ let finLoja='all';
 
 function setFinLoja(loja,btn){
   finLoja=loja;
+  lojaAtiva=loja; // sincroniza seletor global
   document.querySelectorAll('#fin-loja-filter .filter-btn').forEach(b=>b.classList.remove('active'));
   if(btn) btn.classList.add('active');
   renderFinanceiro();
 }
 
 function getFinVendas(){
-  return finLoja==='all'
-    ?[...dados.jq.vendas,...dados.sp.vendas]
-    :dados[finLoja].vendas||[];
+  // Reutiliza getVendas que já trata o filtro de loja incluindo pessoal
+  return getVendas();
 }
-
 function getFinDespesas(){
-  // Considera pagamentos com status Pago para cálculo de saídas reais
-  const pags=finLoja==='all'
-    ?[...dados.jq.pagamentos,...dados.sp.pagamentos]
-    :dados[finLoja].pagamentos||[];
+  const pags = getPagamentos();
   return pags.filter(p=>(p.Status||'').toLowerCase()==='pago');
 }
 
@@ -1530,7 +1569,9 @@ function renderKPIs(){
 
   setEl('kpi-fat',fmt(fat));
   setEl('kpi-fat-sub',`em ${n} venda${n!==1?'s':''}`);
-  document.getElementById('kpi-fat-split').innerHTML=lojaAtiva==='all'?`<div class="kpi-split-item jq">JQ ${fmt(fatJq)}</div><div class="kpi-split-item sp">SP ${fmt(fatSp)}</div>`:'';
+  document.getElementById('kpi-fat-split').innerHTML=
+    (lojaAtiva==='all'||lojaAtiva==='tudo')?
+    `<div class="kpi-split-item jq">JQ ${fmt(fatJq)}</div><div class="kpi-split-item sp">SP ${fmt(fatSp)}</div>${lojaAtiva==='tudo'?`<div class="kpi-split-item ps">PS ${fmt(dados.ps.vendas.reduce((s,r)=>s+parseFloat(r.Total||0),0))}</div>`:''}`:'';
   setEl('kpi-vendas',n);
   setEl('kpi-vendas-sub','no período');
   document.getElementById('kpi-vendas-split').innerHTML=lojaAtiva==='all'?`<div class="kpi-split-item jq">JQ ${vJq.length}</div><div class="kpi-split-item sp">SP ${vSp.length}</div>`:'';
