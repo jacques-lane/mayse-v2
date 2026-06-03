@@ -280,6 +280,7 @@ body{font-family:'Sora',sans-serif;background:var(--cream);color:var(--grafite);
         <button class="loja-tab active-all" onclick="setLoja('all',this)">🌿 Consolidado</button>
         <button class="loja-tab" onclick="setLoja('jq',this)"><span class="loja-dot" style="background:var(--jq)"></span>Juquiá</button>
         <button class="loja-tab" onclick="setLoja('sp',this)"><span class="loja-dot" style="background:var(--sp)"></span>São Paulo</button>
+        <button class="loja-tab" onclick="setLoja('ps',this)"><span class="loja-dot" style="background:#9c56b8"></span>Pessoal</button>
       </div>
       <div class="period-bar">
         <input type="date" class="period-input" id="date-from">
@@ -398,11 +399,49 @@ body{font-family:'Sora',sans-serif;background:var(--cream);color:var(--grafite);
       <div class="chart-card">
         <div class="chart-header">
           <div><div class="chart-title">Tabela analítica</div><div class="chart-sub">Para exportação e conciliação</div></div>
-          <button onclick="exportarCSV()" style="padding:5px 12px;background:var(--vf);color:white;border:none;border-radius:8px;font-family:'Sora',sans-serif;font-size:11px;font-weight:600;cursor:pointer;">⬇ CSV</button>
+          <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+            <button class="btn-novo" onclick="abrirModal('recebimento')">+ Novo recebimento</button>
+            <button onclick="exportarCSV()" style="padding:6px 14px;background:var(--vf);color:white;border:none;border-radius:8px;font-family:'Sora',sans-serif;font-size:11px;font-weight:600;cursor:pointer;">⬇ CSV</button>
+          </div>
         </div>
+        <!-- Filtros -->
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:8px;margin-bottom:14px;padding:14px;background:var(--cream);border-radius:10px;">
+          <div>
+            <div style="font-size:10px;font-weight:600;letter-spacing:1px;text-transform:uppercase;color:var(--light);margin-bottom:4px;">Forma pag.</div>
+            <select class="fform-select" id="filter-pagamento" onchange="aplicarFiltrosAnalitica()" style="font-size:12px;padding:7px 10px;">
+              <option value="">Todas</option>
+              <option value="Pix">Pix</option>
+              <option value="Dinheiro">Dinheiro</option>
+              <option value="Crédito">Crédito</option>
+              <option value="Débito">Débito</option>
+            </select>
+          </div>
+          <div>
+            <div style="font-size:10px;font-weight:600;letter-spacing:1px;text-transform:uppercase;color:var(--light);margin-bottom:4px;">Operador</div>
+            <select class="fform-select" id="filter-operador" onchange="aplicarFiltrosAnalitica()" style="font-size:12px;padding:7px 10px;">
+              <option value="">Todos</option>
+            </select>
+          </div>
+          <div>
+            <div style="font-size:10px;font-weight:600;letter-spacing:1px;text-transform:uppercase;color:var(--light);margin-bottom:4px;">Cliente</div>
+            <input class="fform-input" id="filter-cliente" type="text" placeholder="Buscar cliente…" oninput="aplicarFiltrosAnalitica()" style="font-size:12px;padding:7px 10px;">
+          </div>
+          <div>
+            <div style="font-size:10px;font-weight:600;letter-spacing:1px;text-transform:uppercase;color:var(--light);margin-bottom:4px;">Data início</div>
+            <input class="fform-input" id="filter-data-de" type="date" onchange="aplicarFiltrosAnalitica()" style="font-size:12px;padding:7px 10px;">
+          </div>
+          <div>
+            <div style="font-size:10px;font-weight:600;letter-spacing:1px;text-transform:uppercase;color:var(--light);margin-bottom:4px;">Data fim</div>
+            <input class="fform-input" id="filter-data-ate" type="date" onchange="aplicarFiltrosAnalitica()" style="font-size:12px;padding:7px 10px;">
+          </div>
+          <div style="display:flex;align-items:flex-end;">
+            <button onclick="limparFiltrosAnalitica()" style="padding:7px 12px;background:var(--branco);border:1.5px solid var(--border);border-radius:8px;font-family:'Sora',sans-serif;font-size:11px;cursor:pointer;color:var(--mid);white-space:nowrap;">✕ Limpar</button>
+          </div>
+        </div>
+        <div style="font-size:12px;color:var(--mid);margin-bottom:8px;">Exibindo <strong id="analitica-count">—</strong> registros</div>
         <div style="overflow-x:auto;">
           <table class="data-table">
-            <thead><tr><th>Loja</th><th>Data</th><th>Hora</th><th>Cliente</th><th>Produtos</th><th>Dinheiro</th><th>Pix</th><th>Crédito</th><th>Débito</th><th>Troco</th><th>Total</th><th>Operador</th></tr></thead>
+            <thead><tr><th>Loja</th><th>Data</th><th>Hora</th><th>Cliente</th><th>Descrição</th><th>Dinheiro</th><th>Pix</th><th>Crédito</th><th>Débito</th><th>Troco</th><th>Total</th><th>Operador</th></tr></thead>
             <tbody id="tbody-analitica"><tr><td colspan="12"><div class="empty-state"><div class="empty-msg">Carregue os dados</div></div></td></tr></tbody>
           </table>
         </div>
@@ -455,6 +494,7 @@ body{font-family:'Sora',sans-serif;background:var(--cream);color:var(--grafite);
               <button class="filter-btn" onclick="filtrarEstDash('sp',this)">São Paulo</button>
               <button class="filter-btn" onclick="filtrarEstDash('alertas',this)">⚠️ Alertas</button>
             </div>
+            <button class="btn-novo" style="background:var(--rosa);" onclick="abrirModal('perda')">📉 Registrar perda</button>
             <button class="btn-novo" onclick="abrirModal('estoque')">+ Novo produto</button>
           </div>
         </div>
@@ -597,7 +637,123 @@ body{font-family:'Sora',sans-serif;background:var(--cream);color:var(--grafite);
     </div>
 
   </div>
-<!-- MODAL: NOVO PRODUTO NO ESTOQUE -->
+<!-- MODAL: NOVO RECEBIMENTO -->
+<div class="fmodal-overlay" id="fmodal-recebimento">
+  <div class="fmodal">
+    <button class="fmodal-close" onclick="fecharModal('recebimento')">×</button>
+    <div class="fmodal-title">💰 Novo recebimento</div>
+    <div class="fmodal-sub">Lançamento manual — pessoal, dívidas, outros.</div>
+    <div class="fform-row">
+      <div class="fform-group">
+        <label class="fform-label">Loja / Origem *</label>
+        <select class="fform-select" id="frec-loja">
+          <option value="jq">Juquiá</option>
+          <option value="sp">São Paulo</option>
+          <option value="ps">Pessoal</option>
+        </select>
+      </div>
+      <div class="fform-group">
+        <label class="fform-label">Data *</label>
+        <input class="fform-input" id="frec-data" type="date">
+      </div>
+    </div>
+    <div class="fform-row">
+      <div class="fform-group">
+        <label class="fform-label">Hora</label>
+        <input class="fform-input" id="frec-hora" type="time">
+      </div>
+      <div class="fform-group">
+        <label class="fform-label">Valor (R$) *</label>
+        <input class="fform-input" id="frec-valor" type="number" min="0" step="0.01" placeholder="0,00">
+      </div>
+    </div>
+    <div class="fform-group">
+      <label class="fform-label">Descrição / Cliente *</label>
+      <input class="fform-input" id="frec-descricao" type="text" placeholder="Ex: Pagamento João, Aluguel recebido…">
+    </div>
+    <div class="fform-row">
+      <div class="fform-group">
+        <label class="fform-label">Forma de pagamento</label>
+        <select class="fform-select" id="frec-forma">
+          <option value="Pix">Pix</option>
+          <option value="Dinheiro">Dinheiro</option>
+          <option value="Transferência">Transferência</option>
+          <option value="Crédito">Crédito</option>
+          <option value="Débito">Débito</option>
+          <option value="Outro">Outro</option>
+        </select>
+      </div>
+      <div class="fform-group">
+        <label class="fform-label">Operador</label>
+        <input class="fform-input" id="frec-operador" type="text" placeholder="Seu nome">
+      </div>
+    </div>
+    <div class="fmsg" id="frec-msg"></div>
+    <div class="fmodal-footer">
+      <button class="btn-fcancel" onclick="fecharModal('recebimento')">Cancelar</button>
+      <button class="btn-fsubmit" id="btn-frec" onclick="submitRecebimento()">
+        <div class="fsubmit-spinner" id="sp-frec"></div>
+        Salvar recebimento
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: REGISTRAR PERDA -->
+<div class="fmodal-overlay" id="fmodal-perda">
+  <div class="fmodal">
+    <button class="fmodal-close" onclick="fecharModal('perda')">×</button>
+    <div class="fmodal-title">📉 Registrar saída / perda</div>
+    <div class="fmodal-sub">Baixa no estoque com registro no histórico de perdas.</div>
+    <div class="fform-row">
+      <div class="fform-group">
+        <label class="fform-label">Loja *</label>
+        <select class="fform-select" id="fper-loja">
+          <option value="jq">Juquiá</option>
+          <option value="sp">São Paulo</option>
+        </select>
+      </div>
+      <div class="fform-group">
+        <label class="fform-label">Data *</label>
+        <input class="fform-input" id="fper-data" type="date">
+      </div>
+    </div>
+    <div class="fform-group">
+      <label class="fform-label">Produto *</label>
+      <input class="fform-input" id="fper-produto" type="text" placeholder="Nome do produto">
+    </div>
+    <div class="fform-row">
+      <div class="fform-group">
+        <label class="fform-label">Quantidade *</label>
+        <input class="fform-input" id="fper-qtd" type="number" min="1" placeholder="0">
+      </div>
+      <div class="fform-group">
+        <label class="fform-label">Motivo *</label>
+        <select class="fform-select" id="fper-motivo">
+          <option value="Perda">Perda</option>
+          <option value="Vencimento">Vencimento</option>
+          <option value="Furto">Furto</option>
+          <option value="Dano">Dano</option>
+          <option value="Pró-labore">Pró-labore</option>
+          <option value="Uso interno">Uso interno</option>
+          <option value="Outro">Outro</option>
+        </select>
+      </div>
+    </div>
+    <div class="fform-group">
+      <label class="fform-label">Observação</label>
+      <textarea class="fform-textarea" id="fper-obs" placeholder="Detalhes adicionais…"></textarea>
+    </div>
+    <div class="fmsg" id="fper-msg"></div>
+    <div class="fmodal-footer">
+      <button class="btn-fcancel" onclick="fecharModal('perda')">Cancelar</button>
+      <button class="btn-fsubmit" id="btn-fper" onclick="submitPerda()">
+        <div class="fsubmit-spinner" id="sp-fper"></div>
+        Registrar saída
+      </button>
+    </div>
+  </div>
+</div>
 <div class="fmodal-overlay" id="fmodal-estoque">
   <div class="fmodal">
     <button class="fmodal-close" onclick="fecharModal('estoque')">×</button>
@@ -903,7 +1059,192 @@ function initSetup(){
   if(urls.jq&&urls.sp&&tokens.jq&&tokens.sp) document.getElementById('setup-card').style.display='none';
 }
 
-// ── FINANCEIRO ──
+// ── PESSOAL tag support ──
+// Pessoal usa a loja jq como base, com tag Loja='pessoal' nos registros
+// No selector 'ps' filtramos registros com _loja='ps' ou Loja='pessoal'
+
+// ── LOJA SELECTOR atualizado ──
+function setLoja(loja, btn){
+  lojaAtiva=loja;
+  document.querySelectorAll('.loja-tab').forEach(b=>{b.className='loja-tab';});
+  const cls={'all':'active-all','jq':'active-jq','sp':'active-sp','ps':'active-ps'};
+  btn.className='loja-tab '+(cls[loja]||'active-all');
+  if(Object.values(dados.jq.vendas).length||Object.values(dados.sp.vendas).length) renderAll();
+}
+
+function getVendas(){
+  if(lojaAtiva==='all') return [...dados.jq.vendas.map(r=>({...r,_loja:'jq'})),...dados.sp.vendas.map(r=>({...r,_loja:'sp'})),...(dados.ps?.vendas||[]).map(r=>({...r,_loja:'ps'}))];
+  if(lojaAtiva==='ps') return (dados.ps?.vendas||[]).map(r=>({...r,_loja:'ps'}));
+  return dados[lojaAtiva].vendas.map(r=>({...r,_loja:lojaAtiva}));
+}
+function getEncomendas(){
+  if(lojaAtiva==='all') return [...dados.jq.encomendas.map(r=>({...r,_loja:'jq'})),...dados.sp.encomendas.map(r=>({...r,_loja:'sp'}))];
+  if(lojaAtiva==='ps') return [];
+  return dados[lojaAtiva].encomendas.map(r=>({...r,_loja:lojaAtiva}));
+}
+function getEstoque(loja){
+  if(loja==='all') return [...dados.jq.estoque.map(r=>({...r,_loja:'jq'})),...dados.sp.estoque.map(r=>({...r,_loja:'sp'}))];
+  if(loja==='ps') return [];
+  return (dados[loja]?.estoque||[]).map(r=>({...r,_loja:loja}));
+}
+function getCompras(){
+  if(lojaAtiva==='all') return [...dados.jq.compras.map(r=>({...r,_loja:'jq'})),...dados.sp.compras.map(r=>({...r,_loja:'sp'}))];
+  if(lojaAtiva==='ps') return [];
+  return (dados[lojaAtiva]?.compras||[]).map(r=>({...r,_loja:lojaAtiva}));
+}
+function getPagamentos(){
+  const pags=[...dados.jq.pagamentos,...dados.sp.pagamentos];
+  if(dados.ps?.pagamentos) pags.push(...dados.ps.pagamentos);
+  return pags;
+}
+function lojaNome(l){return l==='jq'?'Juquiá':l==='sp'?'São Paulo':l==='ps'?'Pessoal':'—';}
+
+// ── FILTROS ANALÍTICA ──
+let _vendaAnaliticaCache = [];
+
+function popularFiltroOperadores(){
+  const ops = new Set(getVendas().map(r=>r.Operador||'').filter(Boolean));
+  const sel = document.getElementById('filter-operador');
+  if(!sel) return;
+  const val = sel.value;
+  sel.innerHTML = '<option value="">Todos</option>' + [...ops].sort().map(o=>`<option value="${escapeHtml(o)}" ${o===val?'selected':''}>${escapeHtml(o)}</option>`).join('');
+}
+
+function aplicarFiltrosAnalitica(){
+  const forma = document.getElementById('filter-pagamento')?.value||'';
+  const op    = document.getElementById('filter-operador')?.value||'';
+  const cli   = (document.getElementById('filter-cliente')?.value||'').toLowerCase();
+  const de    = document.getElementById('filter-data-de')?.value||'';
+  const ate   = document.getElementById('filter-data-ate')?.value||'';
+
+  let rows = _vendaAnaliticaCache;
+
+  if(forma){
+    rows = rows.filter(r=>{
+      if(forma==='Pix') return parseFloat(r.Pix||0)>0;
+      if(forma==='Dinheiro') return parseFloat(r.Dinheiro||0)>0;
+      if(forma==='Crédito') return parseFloat(r.Credito||0)>0;
+      if(forma==='Débito') return parseFloat(r.Debito||0)>0;
+      return true;
+    });
+  }
+  if(op) rows = rows.filter(r=>(r.Operador||'')===op);
+  if(cli) rows = rows.filter(r=>(r.Cliente||r.Descricao||'').toLowerCase().includes(cli));
+  if(de){
+    const deD = new Date(de+'T00:00:00');
+    rows = rows.filter(r=>{const d=parseDate(r.Data);return d&&d>=deD;});
+  }
+  if(ate){
+    const ateD = new Date(ate+'T23:59:59');
+    rows = rows.filter(r=>{const d=parseDate(r.Data);return d&&d<=ateD;});
+  }
+
+  setEl('analitica-count', rows.length);
+  renderTabelaAnaliticaRows(rows);
+}
+
+function limparFiltrosAnalitica(){
+  const ids=['filter-pagamento','filter-operador','filter-data-de','filter-data-ate'];
+  ids.forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+  const cli=document.getElementById('filter-cliente');if(cli)cli.value='';
+  aplicarFiltrosAnalitica();
+}
+
+function renderTabelaAnaliticaRows(rows){
+  const tbody=document.getElementById('tbody-analitica');
+  if(!tbody) return;
+  if(!rows.length){tbody.innerHTML='<tr><td colspan="12"><div class="empty-state"><div class="empty-msg">Nenhum registro encontrado</div></div></td></tr>';return;}
+  tbody.innerHTML=rows.map(r=>`<tr>
+    <td><span class="loja-badge ${r._loja||'jq'}">${lojaNome(r._loja)}</span></td>
+    <td>${fmtDateBR(r.Data)}</td><td>${fmtHora(r.Hora)}</td>
+    <td><strong>${escapeHtml(r.Cliente||r.Descricao||'—')}</strong></td>
+    <td style="max-width:150px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" title="${escapeHtml(r.Produtos||r.Descricao||'')}">${escapeHtml(r.Produtos||r.Tipo||'Manual')}</td>
+    <td style="text-align:right">${parseFloat(r.Dinheiro||0)>0?fmt(r.Dinheiro):'—'}</td>
+    <td style="text-align:right">${parseFloat(r.Pix||0)>0?fmt(r.Pix):'—'}</td>
+    <td style="text-align:right">${parseFloat(r.Credito||0)>0?fmt(r.Credito):'—'}</td>
+    <td style="text-align:right">${parseFloat(r.Debito||0)>0?fmt(r.Debito):'—'}</td>
+    <td style="text-align:right;color:#7a5c00">${parseFloat(r.Troco||0)>0?fmt(r.Troco):'—'}</td>
+    <td style="text-align:right;font-weight:700;color:var(--vf)">${fmt(r.Total)}</td>
+    <td style="font-size:11px;color:var(--mid)">${escapeHtml(r.Operador||'—')}</td>
+  </tr>`).join('');
+}
+
+// ── SUBMIT RECEBIMENTO MANUAL ──
+async function submitRecebimento(){
+  const loja = document.getElementById('frec-loja').value;
+  const desc = document.getElementById('frec-descricao').value.trim();
+  const valor = parseFloat(document.getElementById('frec-valor').value)||0;
+  const data  = document.getElementById('frec-data').value;
+  if(!desc||!valor||!data){showMsg('frec-msg','err','Preencha data, descrição e valor.');return;}
+  setFLoading('btn-frec','sp-frec',true);
+  const forma = document.getElementById('frec-forma').value;
+  const agora = new Date();
+  const hora  = document.getElementById('frec-hora').value || agora.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
+  const payload = {
+    tipo:'venda_manual',
+    data, hora,
+    telefone:'', nome:desc, Cliente:desc,
+    produtosTexto: 'Lançamento manual',
+    Produtos:'Lançamento manual',
+    total:valor, Total:valor,
+    pagamentos:{
+      Dinheiro: forma==='Dinheiro'?valor:0,
+      Pix:      forma==='Pix'?valor:0,
+      Credito:  forma==='Crédito'?valor:0,
+      Debito:   forma==='Débito'?valor:0,
+    },
+    Dinheiro: forma==='Dinheiro'?valor:0,
+    Pix:      forma==='Pix'?valor:0,
+    Credito:  forma==='Crédito'?valor:0,
+    Debito:   forma==='Débito'?valor:0,
+    troco:0, Troco:0,
+    operador: document.getElementById('frec-operador').value||'Dashboard',
+    cidade:'Dashboard', dispositivo:'Dashboard',
+    loja_tag: loja==='ps'?'pessoal':loja
+  };
+  try{
+    const lojaAlvo = loja==='ps'?'jq':loja; // pessoal usa planilha jq com tag
+    await postToLoja(lojaAlvo, payload);
+    showMsg('frec-msg','ok','✓ Recebimento salvo! Recarregue para ver.');
+    setTimeout(()=>fecharModal('recebimento'),1800);
+  }catch(e){showMsg('frec-msg','err','Erro: '+e.message);}
+  setFLoading('btn-frec','sp-frec',false);
+}
+
+// ── SUBMIT PERDA ──
+async function submitPerda(){
+  const loja    = document.getElementById('fper-loja').value;
+  const produto = document.getElementById('fper-produto').value.trim();
+  const qtd     = parseInt(document.getElementById('fper-qtd').value)||0;
+  const motivo  = document.getElementById('fper-motivo').value;
+  const data    = document.getElementById('fper-data').value;
+  if(!produto||!qtd||!data){showMsg('fper-msg','err','Preencha produto, quantidade e data.');return;}
+  setFLoading('btn-fper','sp-fper',true);
+  try{
+    await postToLoja(loja,{
+      tipo:'registrar_perda',
+      produto, qtd, motivo, data,
+      observacao: document.getElementById('fper-obs').value,
+      operador:'Dashboard'
+    });
+    showMsg('fper-msg','ok',`✓ Perda de ${qtd}x ${produto} registrada! Estoque atualizado.`);
+    setTimeout(()=>fecharModal('perda'),1800);
+  }catch(e){showMsg('fper-msg','err','Erro: '+e.message);}
+  setFLoading('btn-fper','sp-fper',false);
+}
+
+// ── CSS extra para loja pessoal ──
+(function(){
+  const s=document.createElement('style');
+  s.textContent=`
+    .loja-tab.active-ps{background:#9c56b8;color:white;}
+    .loja-badge.ps{background:#f3e8ff;color:#6b21a8;}
+    .kpi-split-item.ps{background:#f3e8ff;color:#6b21a8;}
+  `;
+  document.head.appendChild(s);
+})();
+
+// ── FIX DATA DRE ──
 let finLoja='all';
 
 function setFinLoja(loja,btn){
@@ -1094,16 +1435,35 @@ function exportarDRE(){
 function fmtISO(d){return d.toISOString().split('T')[0];}
 function fmtDateBR(val){
   if(!val) return '—';
+  // ISO from Sheets: "2026-05-30T03:00:00.000Z"
   if(typeof val==='string'&&val.includes('T')){
     const d=new Date(val);
-    return `${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}/${d.getFullYear()}`;
+    if(!isNaN(d)) return `${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}/${d.getFullYear()}`;
+  }
+  // Already dd/mm/yyyy
+  if(typeof val==='string'&&val.match(/^\d{2}\/\d{2}\/\d{4}$/)) return val.trim();
+  // JS Date string: "Mon Jun 01 2026 00:00:00 GMT-0300"
+  if(typeof val==='string'||val instanceof Date){
+    const d=new Date(val);
+    if(!isNaN(d)) return `${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}/${d.getFullYear()}`;
   }
   return String(val).trim();
 }
 function parseDate(val){
   if(!val) return null;
-  if(typeof val==='string'&&val.includes('T')){const d=new Date(val);return new Date(d.getFullYear(),d.getMonth(),d.getDate());}
-  if(typeof val==='string'&&val.includes('/')){const p=val.split('/');return new Date(parseInt(p[2]),parseInt(p[1])-1,parseInt(p[0]));}
+  // ISO: "2026-05-30T03:00:00.000Z"
+  if(typeof val==='string'&&val.includes('T')){
+    const d=new Date(val);
+    if(!isNaN(d)) return new Date(d.getFullYear(),d.getMonth(),d.getDate());
+  }
+  // dd/mm/yyyy
+  if(typeof val==='string'&&val.match(/^\d{2}\/\d{2}\/\d{4}$/)){
+    const p=val.split('/');
+    return new Date(parseInt(p[2]),parseInt(p[1])-1,parseInt(p[0]));
+  }
+  // Any other string or Date object (e.g. "Mon Jun 01 2026...")
+  const d=new Date(val);
+  if(!isNaN(d)) return new Date(d.getFullYear(),d.getMonth(),d.getDate());
   return null;
 }
 function fmtHora(val){
@@ -1117,19 +1477,7 @@ function fmtN(n){return parseFloat(n||0).toLocaleString('pt-BR',{minimumFraction
 // ── URLS ──
 
 // ── LOJA SELECTOR ──
-function setLoja(loja, btn){
-  lojaAtiva=loja;
-  document.querySelectorAll('.loja-tab').forEach(b=>{b.className='loja-tab';});
-  btn.className='loja-tab active-'+loja;
-  if(Object.values(dados.jq.vendas).length||Object.values(dados.sp.vendas).length) renderAll();
-}
 
-function getVendas(){ return lojaAtiva==='all'?[...dados.jq.vendas.map(r=>({...r,_loja:'jq'})),...dados.sp.vendas.map(r=>({...r,_loja:'sp'}))] : dados[lojaAtiva].vendas.map(r=>({...r,_loja:lojaAtiva})); }
-function getEncomendas(){ return lojaAtiva==='all'?[...dados.jq.encomendas.map(r=>({...r,_loja:'jq'})),...dados.sp.encomendas.map(r=>({...r,_loja:'sp'}))] : dados[lojaAtiva].encomendas.map(r=>({...r,_loja:lojaAtiva})); }
-function getEstoque(loja){ return loja==='all'?[...dados.jq.estoque.map(r=>({...r,_loja:'jq'})),...dados.sp.estoque.map(r=>({...r,_loja:'sp'}))] : dados[loja].estoque.map(r=>({...r,_loja:loja})); }
-function getCompras(){ return lojaAtiva==='all'?[...dados.jq.compras.map(r=>({...r,_loja:'jq'})),...dados.sp.compras.map(r=>({...r,_loja:'sp'}))] : dados[lojaAtiva].compras.map(r=>({...r,_loja:lojaAtiva})); }
-function getPagamentos(){ return [...dados.jq.pagamentos,...dados.sp.pagamentos]; }
-function lojaNome(l){ return l==='jq'?'Juquiá':'São Paulo'; }
 
 // ── LOAD ──
 async function loadData(){
@@ -1313,21 +1661,11 @@ function renderRecebimentos(){
 
   renderLinhasMetodos();
 
-  // Tabela analítica
-  const tbody=document.getElementById('tbody-analitica');
-  tbody.innerHTML=v.map(r=>`<tr>
-    <td><span class="loja-badge ${r._loja}">${lojaNome(r._loja)}</span></td>
-    <td>${fmtDateBR(r.Data)}</td><td>${fmtHora(r.Hora)}</td>
-    <td><strong>${escapeHtml(r.Cliente)||'—'}</strong></td>
-    <td style="max-width:150px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" title="${escapeHtml(r.Produtos)||''}">${escapeHtml(r.Produtos)||'—'}</td>
-    <td style="text-align:right">${parseFloat(r.Dinheiro||0)>0?fmt(r.Dinheiro):'—'}</td>
-    <td style="text-align:right">${parseFloat(r.Pix||0)>0?fmt(r.Pix):'—'}</td>
-    <td style="text-align:right">${parseFloat(r.Credito||0)>0?fmt(r.Credito):'—'}</td>
-    <td style="text-align:right">${parseFloat(r.Debito||0)>0?fmt(r.Debito):'—'}</td>
-    <td style="text-align:right;color:#7a5c00">${parseFloat(r.Troco||0)>0?fmt(r.Troco):'—'}</td>
-    <td style="text-align:right;font-weight:700;color:var(--vf)">${fmt(r.Total)}</td>
-    <td style="font-size:11px;color:var(--mid)">${r.Operador||'—'}</td>
-  </tr>`).join('') || '<tr><td colspan="12"><div class="empty-state"><div class="empty-msg">Sem dados</div></div></td></tr>';
+  // Cache e filtros da tabela analítica
+  _vendaAnaliticaCache = v;
+  popularFiltroOperadores();
+  setEl('analitica-count', v.length);
+  aplicarFiltrosAnalitica();
 }
 
 // ── HEATMAP ──
