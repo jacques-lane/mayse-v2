@@ -1645,17 +1645,19 @@ function renderBarChart(containerId,data,color,fmtVal){
 
 // ── NAV ──
 function showSection(name,btn){
-  ['visao-geral','produtos','recebimentos','encomendas','estoque','compras','pagamentos'].forEach(s=>{
+  ['visao-geral','produtos','recebimentos','encomendas','estoque','compras','pagamentos','financeiro'].forEach(s=>{
     const el=document.getElementById('section-'+s);if(el) el.style.display=s===name?'block':'none';
   });
   document.querySelectorAll('.nav-item').forEach(b=>b.classList.remove('active'));
   btn.classList.add('active');
   const titles={
     'visao-geral':'Visão Geral','produtos':'Produtos','recebimentos':'Recebimentos',
-    'encomendas':'Encomendas','estoque':'Estoque','compras':'Compras','pagamentos':'Pagamentos'
+    'encomendas':'Encomendas','estoque':'Estoque','compras':'Compras',
+    'pagamentos':'Pagamentos','financeiro':'Financeiro'
   };
   setEl('section-title',titles[name]||name);
   closeSidebar();
+  if(name==='financeiro') renderFinanceiro();
 }
 
 // ── FORM MODALS ──
